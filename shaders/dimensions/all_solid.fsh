@@ -275,7 +275,7 @@ vec4 texture2D_POMSwitch(
 	}
 }
 
-
+uniform vec3 eyePosition;
 
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
@@ -315,8 +315,14 @@ void main() {
 
 	float torchlightmap = lmtexcoord.z;
 
-	#ifdef Hand_Held_lights
-		if(HELD_ITEM_BRIGHTNESS > 0.0) torchlightmap = max(torchlightmap, HELD_ITEM_BRIGHTNESS * clamp( pow(max(1.0-length(worldpos-cameraPosition)/HANDHELD_LIGHT_RANGE,0.0),1.5),0.0,1.0));
+	#if defined Hand_Held_lights && !defined LPV_ENABLED
+		#ifdef IS_IRIS
+			vec3 playerCamPos = eyePosition;
+		#else
+			vec3 playerCamPos = cameraPosition;
+		#endif
+
+		if(HELD_ITEM_BRIGHTNESS > 0.0) torchlightmap = max(torchlightmap, HELD_ITEM_BRIGHTNESS * clamp( pow(max(1.0-length(worldpos-playerCamPos)/HANDHELD_LIGHT_RANGE,0.0),1.5),0.0,1.0));
 
 		#ifdef HAND
 			torchlightmap *= 0.9;
@@ -351,8 +357,6 @@ void main() {
 	if(!ifPOM) maxdist = 0.0;
 
 	gl_FragDepth = gl_FragCoord.z;
-		// coord += noise*interval;
-		// float sumVec = noise;
 	if (dist < maxdist) {
 
 		float depthmap = readNormal(vtexcoord.st).a;
@@ -399,7 +403,7 @@ void main() {
 	//////////////////////////////// 				//////////////////////////////// 
 	float textureLOD = bias();
 	vec4 Albedo = texture2D_POMSwitch(texture, adjustedTexCoord.xy, vec4(dcdx,dcdy), ifPOM, textureLOD) * color;
-
+	
 	#if defined HAND
 		if (Albedo.a < 0.1) discard;
 	#endif
@@ -553,7 +557,7 @@ void main() {
 		vec2 PackLightmaps = vec2(torchlightmap, lmtexcoord.w);
 		
 		vec4 data1 = clamp( encode(viewToWorld(normal), PackLightmaps), 0.0, 1.0);
-
+		
 		gl_FragData[0] = vec4(encodeVec2(Albedo.x,data1.x),	encodeVec2(Albedo.y,data1.y),	encodeVec2(Albedo.z,data1.z),	encodeVec2(data1.w,Albedo.w));
 
 		gl_FragData[2] = vec4(FlatNormals * 0.5 + 0.5, VanillaAO);	
