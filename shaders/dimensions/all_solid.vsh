@@ -363,7 +363,18 @@ void main() {
 #endif
 
 	#if defined Seasons && defined WORLD && !defined ENTITIES && !defined BLOCKENTITIES && !defined HAND
-		YearCycleColor(color.rgb, gl_Color.rgb, mc_Entity.x == BLOCK_AIR_WAVING, true);
+		// if (InterpolateFromBase) {
+			float blank = 0.0;
+			YearCycleColor(color.rgb, gl_Color.rgb, blank, mc_Entity.x == BLOCK_AIR_WAVING, true);
+
+		// 	vec3 worldpos = mat3(gbufferModelViewInverse) * position + gbufferModelViewInverse[3].xyz;
+
+		// 	worldpos += vec3(0.0f, 2.0f/16.0f, 0.0f);
+
+		// 	position = mat3(gbufferModelView) * worldpos + gbufferModelView[3].xyz;
+
+		// 	gl_Position = toClipSpace3(position);
+		// }
 	#endif
 
 	#ifdef TAA_UPSCALING

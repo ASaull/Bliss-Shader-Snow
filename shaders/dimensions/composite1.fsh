@@ -135,6 +135,8 @@ flat varying float exposure;
 	uniform int heldItemId2;
 #endif
 
+flat varying float WinterTimeForSnow;
+
 
 void convertHandDepth(inout float depth) {
     float ndcDepth = depth * 2.0 - 1.0;
@@ -791,6 +793,13 @@ void main() {
 			float DH_depth1 = 0.0;
 		#endif
 
+		vec3 fragpos = toScreenSpace(vec3(texcoord/RENDER_SCALE-TAA_Offset*texelSize*0.5,z));
+
+		vec3 p3 = mat3(gbufferModelViewInverse) * fragpos;
+		p3 += gbufferModelViewInverse[3].xyz;
+
+		float iswaterstuff = texture2D(colortex7,texcoord).a ;
+		bool iswater = iswaterstuff > 0.99;
 	
 
 
@@ -1275,6 +1284,30 @@ void main() {
 	/////////////////////////////	FINALIZE	/////////////////////////////
 	/////////////////////////////////////////////////////////////////////////
 
+		#ifdef Seasons
+		#ifdef Snowy_Winter
+
+			vec3 snow_p3 = p3 + cameraPosition ;
+
+			snow_p3 /= 75.0;
+
+			// float resolution = 1000.;
+			// snow_p3 = (fract(snow_p3 * resolution) / resolution) - snow_p3;
+
+			float SnowPatches = texture2D(noisetex, snow_p3.xz).r;
+			// float SnowPatches = densityAtPosSNOW(snow_p3);
+
+			SnowPatches = 1.0 - clamp( exp(pow(SnowPatches,3.5) * -100.0) ,0,1);
+			SnowPatches *= clamp(sqrt(normal.y),0,1) * clamp(pow(lightmap.y,25)*25,0,1);
+
+			SnowPatches = mix(0.0, SnowPatches, WinterTimeForSnow);
+
+			if(!hand && !iswater && !entities && isEyeInWater == 0){
+				albedo = mix(albedo, vec3(0.8,0.9,1.0), SnowPatches);
+				SpecularTex.rg = mix(SpecularTex.rg, vec2(1,0.05), SnowPatches);
+			}
+		#endif
+		#endif
 
 		#ifdef SSS_view
 			albedo = vec3(1);

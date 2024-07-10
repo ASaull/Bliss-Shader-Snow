@@ -34,6 +34,11 @@ uniform float frameTimeCounter;
 uniform int framemod8;
 #include "/lib/TAA_jitter.glsl"
 
+#define SEASONS_VSH
+#include "/lib/climate_settings.glsl"
+
+flat varying float WinterTimeForSnow;
+
 
 
 #include "/lib/util.glsl"
@@ -61,6 +66,16 @@ void main() {
 	#if defined Daily_Weather
 		dailyWeatherParams0 = vec4((texelFetch2D(colortex4,ivec2(1,1),0).rgb/150.0)/2.0, 0.0);
 		dailyWeatherParams1 = vec4((texelFetch2D(colortex4,ivec2(2,1),0).rgb/150.0)/2.0, 0.0);
+	#endif
+
+	WinterTimeForSnow = 0.0f;
+
+	#ifdef Seasons
+		#ifdef Snowy_Winter
+			vec3 color1 = vec3(0.0);
+			vec3 color2 = color1;
+			YearCycleColor(color1, color2, WinterTimeForSnow, true, true);
+		#endif
 	#endif
 	
 	#ifdef TAA
