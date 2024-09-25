@@ -1304,7 +1304,7 @@ void main() {
 
 			if(!hand && !iswater && !entities && isEyeInWater == 0){
 				albedo = mix(albedo, vec3(0.8,0.9,1.0), SnowPatches);
-				SpecularTex.rg = mix(SpecularTex.rg, vec2(1,0.05), SnowPatches);
+				SpecularTex.rg = mix(SpecularTex.rg, vec2(0.7,0.05), SnowPatches);
 			}
 		#endif
 		#endif
