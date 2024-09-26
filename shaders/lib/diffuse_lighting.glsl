@@ -54,10 +54,6 @@ vec3 doBlockLightLighting(
                 blockLight += GetHandLight(heldItemId2, playerPos, normal);
         #endif
     #endif
-
-    // try to make blocklight have consistent visiblity in different light levels.
-    float autoBrightness = mix(1.0, 30.0,  clamp(exp(-10.0*exposureValue),0.0,1.0));
-    blockLight *= autoBrightness;
     
     return blockLight * TORCH_AMOUNT;
 }
