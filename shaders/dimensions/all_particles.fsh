@@ -62,6 +62,7 @@ uniform vec2 texelSize;
 
 uniform ivec2 eyeBrightnessSmooth;
 uniform float rainStrength;
+uniform float noPuddleAreas;
 flat varying float HELD_ITEM_BRIGHTNESS;
 
 #ifndef OVERWORLD_SHADER
@@ -376,7 +377,7 @@ void main() {
 	#endif
 
 	#ifdef WEATHER
-		gl_FragData[1] = vec4(0.0,0.0,0.0,TEXTURE.a); // for bloomy rain and stuff
+		gl_FragData[1] = mix(vec4(1.0,1.0,1.0,TEXTURE.a), vec4(1.0,1.0,1.0,TEXTURE.a/16), noPuddleAreas);// for bloomy rain and stuff
 	#endif
 
 	#ifndef WEATHER
@@ -444,7 +445,7 @@ void main() {
 			Indirect_lighting = vec3(0.3,0.6,1.0) * 0.5;
 		#endif
 
-	///////////////////////// BLOCKLIGHT LIGHTING OR LPV LIGHTING OR FLOODFILL COLORED LIGHTING
+		///////////////////////// BLOCKLIGHT LIGHTING OR LPV LIGHTING OR FLOODFILL COLORED LIGHTING
 		#ifdef IS_LPV_ENABLED
 			vec3 lpvPos = GetLpvPosition(feetPlayerPos);
 		#else
