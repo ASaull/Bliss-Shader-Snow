@@ -46,6 +46,7 @@ vec2 dcdy = dFdy(vtexcoord.st*vtexcoordam.pq)*exp2(Texture_MipMap_Bias);
 varying vec4 lmtexcoord;
 
 varying vec4 color;
+varying vec3 seasonColor;
 
 uniform float far;
 
@@ -402,18 +403,20 @@ void main() {
 	//////////////////////////////// 				//////////////////////////////// 
 	float textureLOD = bias();
 	vec4 baseTex = texture2D_POMSwitch(texture, adjustedTexCoord.xy, vec4(dcdx,dcdy), ifPOM, textureLOD);
+
+	vec4 Albedo = clamp(baseTex * color, 0.0, 1.0);
+
 	#ifdef Seasons
 		if (blockID == 59) { // special options for cherry leaves
 			// we convert the base texture to grayscale if we are trying to tint these stubborn leaves for seasons.
-			if (color.r < 0.99 || color.g < 0.99 || color.b < 0.99) { // small hack. basically if color is all white then we keep the original color
+			if (seasonColor.r < 0.99 || seasonColor.g < 0.99 || seasonColor.b < 0.99) { // small hack. basically if color is all white then we keep the original color
 				// if not white ie. tint exists, then make sure texture is grayscale
 				baseTex = vec4(vec3(0.299 * baseTex.r + 0.587 * baseTex.g + 0.114 * baseTex.b), baseTex.a);
 			}
 		}
+		Albedo = vec4(clamp(baseTex.rgb * seasonColor, 0.0, 1.0), baseTex.a);
 	#endif
-	
-	vec4 Albedo = clamp(baseTex * color, 0.0, 1.0);
-	
+		
 	#if defined HAND
 		if (Albedo.a < 0.1) discard;
 	#endif

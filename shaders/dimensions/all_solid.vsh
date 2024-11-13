@@ -30,6 +30,7 @@ Read the terms of modification and sharing before changing something below pleas
 
 
 varying vec4 color;
+varying vec3 seasonColor;
 varying float VanillaAO;
 
 varying vec4 lmtexcoord;
@@ -369,7 +370,8 @@ void main() {
 
 	#if defined Seasons && defined WORLD && !defined ENTITIES && !defined BLOCKENTITIES && !defined HAND
 			float blank = 0.0;
-			YearCycleColor(color.rgb, gl_Color.rgb, blank, int(blockID), true, gbufferModelViewInverse);
+			seasonColor = color.rgb;
+			YearCycleColor(seasonColor, gl_Color.rgb, blank, int(blockID), true, gbufferModelViewInverse);
 
 		// 	vec3 worldpos = mat3(gbufferModelViewInverse) * position + gbufferModelViewInverse[3].xyz;
 
