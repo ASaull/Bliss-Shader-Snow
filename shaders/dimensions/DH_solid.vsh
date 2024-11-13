@@ -12,6 +12,9 @@ flat varying int dh_material_id;
 uniform vec2 texelSize;
 uniform int framemod8;
 
+uniform sampler2D noisetex;
+uniform vec3 cameraPosition;
+
 #if DOF_QUALITY == 5
 uniform int hideGUI;
 uniform int frameCounter;
@@ -88,7 +91,8 @@ void main() {
 
 	#if defined Seasons && defined OVERWORLD_SHADER
 		float blank = 0.0;
-		YearCycleColor(gcolor.rgb, gl_Color.rgb, blank, dhMaterialId == DH_BLOCK_LEAVES, dhMaterialId == DH_BLOCK_GRASS);
+		mat4 blank2;
+		YearCycleColor(gcolor.rgb, gl_Color.rgb, blank, dhMaterialId == DH_BLOCK_LEAVES ? 1 : 0, dhMaterialId == DH_BLOCK_GRASS, blank2);
 	#endif
 
 	#if DOF_QUALITY == 5

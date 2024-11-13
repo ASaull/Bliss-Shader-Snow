@@ -120,9 +120,20 @@ void main() {
     PackLightmaps = min(max(PackLightmaps,0.0)*1.05,1.0);
     
     vec4 data1 = clamp( encode(normals, PackLightmaps), 0.0, 1.0);
+
+	vec3 baseTex = gcolor.rgb;
     
-    // alpha is material masks, set it to 0.65 to make a DH LODs mask. 
-    vec4 Albedo = vec4(gcolor.rgb, 1.0);
+	#ifdef Seasons
+		if(dh_material_id == DH_BLOCK_LEAVES) {
+			// // Cherry Leaves have high red value
+			// if (baseTex.b > 0.7) {
+			// 	baseTex = vec3(1.0);
+			// }
+		}
+	#endif
+	// alpha is material masks, set it to 0.65 to make a DH LODs mask.
+	vec4 Albedo = vec4(baseTex, 1.0);
+
 
     // vec3 worldPos = mat3(gbufferModelViewInverse)*pos.xyz + cameraPosition;
     // worldPos = (worldPos*vec3(1.0,1./48.,1.0)/4) ;

@@ -38,13 +38,13 @@ float LAYER2_HEIGHT = max(CloudLayer2_height, LAYER1_maxHEIGHT);
 // float LAYER1_COVERAGE = mix(pow(dailyWeatherParams0.y*2.0,0.2), 0.8, rainStrength);
 // float LAYER2_COVERAGE = mix(pow(dailyWeatherParams0.z*2.0,0.2), 1.3, rainStrength);
 
-float LAYER0_COVERAGE = mix(dailyWeatherParams0.x, 0.95, rainStrength);
-float LAYER1_COVERAGE = mix(dailyWeatherParams0.y, 0.0, rainStrength);
-float LAYER2_COVERAGE = mix(dailyWeatherParams0.z, 1.5, rainStrength);
+float LAYER0_COVERAGE = mix(mix(dailyWeatherParams0.x, 0.95, rainStrength), 1.9, snowStorm);
+float LAYER1_COVERAGE = mix(mix(dailyWeatherParams0.y, 0.0, rainStrength), 1.9, snowStorm);
+float LAYER2_COVERAGE = mix(mix(dailyWeatherParams0.z, 1.5, rainStrength), 1.9, snowStorm);
 
-float LAYER0_DENSITY = mix(dailyWeatherParams1.x,1.0,rainStrength);
-float LAYER1_DENSITY = mix(dailyWeatherParams1.y,0.0,rainStrength);
-float LAYER2_DENSITY = mix(dailyWeatherParams1.z,0.05,rainStrength);
+float LAYER0_DENSITY = mix(mix(dailyWeatherParams1.x,1.0,rainStrength), 0.1, snowStorm);
+float LAYER1_DENSITY = mix(mix(dailyWeatherParams1.y,0.0,rainStrength), 0.1, snowStorm);
+float LAYER2_DENSITY = mix(mix(dailyWeatherParams1.z,0.05,rainStrength), 0.1, snowStorm);
 
 uniform int worldDay;
 
@@ -482,7 +482,7 @@ vec4 renderClouds(
 	// use this to blend into the atmosphere's ground.
 	vec3 approxdistance = normalize(dV_viewTEST);
 	#ifdef SKY_GROUND
-		float distantfog = mix(1.0, max(1.0 - clamp(exp2(pow(abs(approxdistance.y),mix(1.5, 4.0, rainStrength)) * -mix(100.0, 35.0, rainStrength)),0.0,1.0),0.0), heightRelativeToClouds);
+		float distantfog = mix(1.0, max(1.0 - clamp(exp2(pow(abs(approxdistance.y),mix(1.5, 4.0, rainStrength-snowStorm)) * -mix(100.0, 35.0, rainStrength)),0.0,1.0),0.0), heightRelativeToClouds);
 	#else
 		float distantfog = 1.0;
 		float distantfog2 = mix(1.0, max(1.0 - clamp(exp(pow(abs(approxdistance.y),1.5) * -35.0),0.0,1.0),0.0), heightRelativeToClouds);

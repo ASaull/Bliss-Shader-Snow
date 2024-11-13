@@ -238,13 +238,13 @@ void main() {
 		if(	
 			(
 				// these wave off of the ground. the area connected to the ground does not wave.
-				(InterpolateFromBase && (blockId == BLOCK_GRASS_TALL_LOWER || blockId == BLOCK_GROUND_WAVING || blockId == BLOCK_GRASS_SHORT || blockId == BLOCK_SAPLING || blockId == BLOCK_GROUND_WAVING_VERTICAL)) 
+				(InterpolateFromBase && (blockId == BLOCK_GRASS_TALL_LOWER || blockId == BLOCK_GROUND_WAVING || blockId == BLOCK_GROUND_WAVING_2 || blockId == BLOCK_GRASS_SHORT || blockId == BLOCK_SAPLING || blockId == BLOCK_GROUND_WAVING_VERTICAL)) 
 
 				// these wave off of the ceiling. the area connected to the ceiling does not wave.
 				|| (!InterpolateFromBase && (blockId == BLOCK_VINE_OTHER))
 
 				// these wave off of the air. they wave uniformly
-				|| (blockId == BLOCK_GRASS_TALL_UPPER || blockId == BLOCK_AIR_WAVING)
+				|| (blockId == BLOCK_GRASS_TALL_UPPER || blockId == BLOCK_AIR_WAVING || blockId == BLOCK_AIR_WAVING_2 || blockId == BLOCK_AIR_WAVING_3 || blockId == BLOCK_AIR_WAVING_4 || blockId == BLOCK_AIR_WAVING_5)
 
 			) && length(position.xy) < 24.0
 		){
@@ -254,7 +254,7 @@ void main() {
 			worldpos += calcMovePlants(playerpos + cameraPosition) * max(gl_MultiTexCoord1.y,0.5);
 
 			// apply displacement for waving leaf blocks specifically, overwriting the other waving mode. these wave off of the air. they wave uniformly
-			if(blockId == BLOCK_AIR_WAVING) worldpos = playerpos + calcMoveLeaves(playerpos + cameraPosition, 0.0040, 0.0064, 0.0043, 0.0035, 0.0037, 0.0041, vec3(1.0,0.2,1.0), vec3(0.5,0.1,0.5))*gl_MultiTexCoord1.y;
+			if(blockId == BLOCK_AIR_WAVING || blockId == BLOCK_AIR_WAVING_2 || blockId == BLOCK_AIR_WAVING_3 || blockId == BLOCK_AIR_WAVING_4 || blockId == BLOCK_AIR_WAVING_5) worldpos = playerpos + calcMoveLeaves(playerpos + cameraPosition, 0.0040, 0.0064, 0.0043, 0.0035, 0.0037, 0.0041, vec3(1.0,0.2,1.0), vec3(0.5,0.1,0.5))*gl_MultiTexCoord1.y;
 			
 			position = mat3(shadowModelView) * worldpos + shadowModelView[3].xyz;
 		}

@@ -60,6 +60,7 @@ uniform int isEyeInWater;
 uniform ivec2 eyeBrightnessSmooth;
 uniform ivec2 eyeBrightness;
 uniform float rainStrength;
+uniform float noPuddleAreas;
 uniform float blindness;
 uniform float darknessFactor;
 uniform float darknessLightFactor;
@@ -445,8 +446,10 @@ void main() {
     vec4 rainDrops =  clamp(texture2D(colortex9,texcoord),  0.0,1.0); 
     if(rainDrops.a > 0.0) bloomyFogMult *= clamp(1.0 - pow(rainDrops.a*5.0,2),0.0,1.0);
 
+    rainDrops.a = mix(rainDrops.a, rainDrops.a/8, noPuddleAreas);
+    
     color *= (1.0-rainDrops.a);
-    color += rainDrops.rgb*10.0; 
+    color += 5 * pow(rainDrops.rgb * rainDrops.a, vec3(1.6)); 
   #endif
   
 ////// --------------- lava.

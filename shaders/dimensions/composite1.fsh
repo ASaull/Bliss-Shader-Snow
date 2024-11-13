@@ -1290,17 +1290,18 @@ void main() {
 
 			snow_p3 /= 75.0;
 
-			// float resolution = 1000.;
-			// snow_p3 = (fract(snow_p3 * resolution) / resolution) - snow_p3;
+			float SnowPatches = texture2D(noisetex, snow_p3.xz).r;
 
-			//float SnowPatches = texture2D(noisetex, snow_p3.xz).r;
-			float SnowPatches = 1.0;
-			// float SnowPatches = densityAtPosSNOW(snow_p3);
+			// if (SnowPatches >= pow(WinterTimeForSnow, 0.9)) {
+			// 	SnowPatches = 0.0;
+			// } else {
+			// 	SnowPatches = 1.0;
+			// }
 
-			SnowPatches = 1.0 - clamp( exp(pow(SnowPatches,3.5) * -100.0) ,0,1);
+			SnowPatches = clamp(SnowPatches-1 + (WinterTimeForSnow*2), 0.0, 1.0);
+			SnowPatches = smoothstep(0.0, 1.0, smoothstep(0.0, 1.0, smoothstep(0.0, 1.0, SnowPatches)));
+
 			SnowPatches *= clamp(sqrt(normal.y),0,1) * clamp(pow(lightmap.y,25)*25,0,1);
-
-			SnowPatches = mix(0.0, SnowPatches, WinterTimeForSnow);
 
 			if(!hand && !iswater && !entities && isEyeInWater == 0){
 				albedo = mix(albedo, vec3(0.8,0.9,1.0), SnowPatches);

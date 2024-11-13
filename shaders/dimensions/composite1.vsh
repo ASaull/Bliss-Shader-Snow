@@ -30,6 +30,8 @@ uniform float rainStrength;
 uniform float sunElevation;
 uniform int frameCounter;
 uniform float frameTimeCounter;
+uniform sampler2D noisetex;
+uniform vec3 cameraPosition;
 
 uniform int framemod8;
 #include "/lib/TAA_jitter.glsl"
@@ -74,7 +76,7 @@ void main() {
 		#ifdef Snowy_Winter
 			vec3 color1 = vec3(0.0);
 			vec3 color2 = color1;
-			YearCycleColor(color1, color2, WinterTimeForSnow, true, true);
+			YearCycleColor(color1, color2, WinterTimeForSnow, 56, true, gbufferModelViewInverse);
 		#endif
 	#endif
 	

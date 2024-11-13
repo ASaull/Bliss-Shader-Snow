@@ -10,10 +10,12 @@
 #endif
 
 #include "/lib/res_params.glsl"
+#include "/lib/blocks.glsl"
 
 varying vec4 lmtexcoord;
 varying vec4 color;
 uniform vec4 entityColor;
+flat varying int blockID;
 
 #ifdef OVERWORLD_SHADER
 	const bool shadowHardwareFiltering = true;
@@ -805,6 +807,13 @@ if (gl_FragCoord.x * texelSize.x < 1.0  && gl_FragCoord.y * texelSize.y < 1.0 )	
 	
 	#else
 		gl_FragData[0].rgb = FinalColor*0.1;
+	#endif
+
+	#if defined BLOCKENTITIES && defined IS_LPV_ENABLED
+		if (blockID == BLOCK_SIGN && lmtexcoord.z >= (14.5/15.0)) {
+			// glowing sign text emission
+			SpecularTex.b = 0.6;
+		}
 	#endif
 
 	#if EMISSIVE_TYPE == 2 || EMISSIVE_TYPE == 3

@@ -82,8 +82,13 @@ void main() {
                 break;
 
             case BLOCK_GROUND_WAVING:
+            case BLOCK_GROUND_WAVING_2:
             case BLOCK_GROUND_WAVING_VERTICAL:
             case BLOCK_AIR_WAVING:
+            case BLOCK_AIR_WAVING_2:
+            case BLOCK_AIR_WAVING_3:
+            case BLOCK_AIR_WAVING_4:
+            case BLOCK_AIR_WAVING_5:
                 mixWeight = 0.9;
                 break;
 
@@ -1089,7 +1094,7 @@ void main() {
         // Misc
 
         if (blockId == BLOCK_SIGN) {
-            mixWeight = 0.9;
+            mixWeight = 0.8;
         }
 
         // Entities

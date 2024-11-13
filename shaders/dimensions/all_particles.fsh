@@ -62,7 +62,6 @@ uniform vec2 texelSize;
 
 uniform ivec2 eyeBrightnessSmooth;
 uniform float rainStrength;
-uniform float noPuddleAreas;
 flat varying float HELD_ITEM_BRIGHTNESS;
 
 #ifndef OVERWORLD_SHADER
@@ -377,7 +376,7 @@ void main() {
 	#endif
 
 	#ifdef WEATHER
-		gl_FragData[1] = mix(vec4(1.0,1.0,1.0,TEXTURE.a), vec4(1.0,1.0,1.0,TEXTURE.a/16), noPuddleAreas);// for bloomy rain and stuff
+		gl_FragData[1] = vec4(1.0,1.0,1.0,TEXTURE.a); // for bloomy rain and stuff
 	#endif
 
 	#ifndef WEATHER
@@ -389,6 +388,7 @@ void main() {
 		#ifndef BLOOMY_PARTICLES
 			gl_FragData[1].a = 0.0; // for bloomy rain and stuff
 		#endif
+	#endif
 
 		vec3 Direct_lighting = vec3(0.0);
 		vec3 directLightColor = vec3(0.0);
@@ -458,15 +458,19 @@ void main() {
 			gl_FragData[0].rgb = (Indirect_lighting + Direct_lighting) * toLinear(color.rgb);
 
 			if(SELECTION_BOX > 0) gl_FragData[0].rgba = vec4(toLinear(vec3(SELECT_BOX_COL_R, SELECT_BOX_COL_G, SELECT_BOX_COL_B)), 1.0);
-		#else
+		#elif ! defined(WEATHER)
 			gl_FragData[0].rgb = (Indirect_lighting + Direct_lighting) * Albedo;
+		#else
+			gl_FragData[1].rgb = gl_FragData[1].rgb * (Indirect_lighting + Direct_lighting);
 		#endif
 
+		#ifndef WEATHER
 		// distance fade targeting the world border...
 		if(TEXTURE.a < 0.7 && TEXTURE.a > 0.2) gl_FragData[0] *= clamp(1.0 - length(feetPlayerPos) / 100.0 ,0.0,1.0);
 
 		gl_FragData[0].rgb *= 0.1;
+		#endif
 
-	#endif
+	// #endif
 #endif
 }
