@@ -372,14 +372,6 @@ void main() {
 			float blank = 0.0;
 			seasonColor = color.rgb;
 			YearCycleColor(seasonColor, gl_Color.rgb, blank, int(blockID), true, gbufferModelViewInverse);
-
-		// 	vec3 worldpos = mat3(gbufferModelViewInverse) * position + gbufferModelViewInverse[3].xyz;
-
-		// 	worldpos += vec3(0.0f, 2.0f/16.0f, 0.0f);
-
-		// 	position = mat3(gbufferModelView) * worldpos + gbufferModelView[3].xyz;
-
-		// 	gl_Position = toClipSpace3(position);
 	#endif
 
 	#ifdef TAA_UPSCALING
