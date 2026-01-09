@@ -267,7 +267,7 @@ void main() {
 
 	// normal block lightsources		
 	if(mc_Entity.x >= 100 && mc_Entity.x < 300) EMISSIVE = 0.5;
-	
+
 	// special cases light lightning and beacon beams...	
 	#ifdef ENTITIES
 		if(entityId == ENTITY_LIGHTNING){
@@ -328,6 +328,10 @@ void main() {
 
 	#endif
 
+	// emission
+	if (lmtexcoord.z >= (14.5/15.0)) {
+		EMISSIVE = 0.4;
+	}
 
 	#ifdef WAVY_PLANTS
 		// also use normal, so up/down facing geometry does not get detatched from its model parts.
@@ -363,7 +367,18 @@ void main() {
 #endif
 
 	#if defined Seasons && defined WORLD && !defined ENTITIES && !defined BLOCKENTITIES && !defined HAND
-		YearCycleColor(color.rgb, gl_Color.rgb, mc_Entity.x == BLOCK_AIR_WAVING, true);
+		// if (InterpolateFromBase) {
+			float blank = 0.0;
+			YearCycleColor(color.rgb, gl_Color.rgb, blank, mc_Entity.x == BLOCK_AIR_WAVING, true);
+
+		// 	vec3 worldpos = mat3(gbufferModelViewInverse) * position + gbufferModelViewInverse[3].xyz;
+
+		// 	worldpos += vec3(0.0f, 2.0f/16.0f, 0.0f);
+
+		// 	position = mat3(gbufferModelView) * worldpos + gbufferModelView[3].xyz;
+
+		// 	gl_Position = toClipSpace3(position);
+		// }
 	#endif
 
 	#ifdef TAA_UPSCALING
