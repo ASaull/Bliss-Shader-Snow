@@ -6,7 +6,7 @@ float lpvCurve(float values) {
     #ifdef VANILLA_LIGHTMAP_MASK
         return sqrt(values);
     #else
-        return values*values;
+        return pow(1.0 - sqrt(1.0-values), 3.0);
     #endif
 }
 

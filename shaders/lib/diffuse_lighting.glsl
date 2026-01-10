@@ -51,7 +51,7 @@ vec3 doBlockLightLighting(
         voxelRangeFalloff = 1.0 - pow(1.0-pow(voxelRangeFalloff,1.5),3.0);
         
         // outside the voxel volume, lerp to vanilla lighting as a fallback
-        blockLight = mix(blockLight, lpvSample.rgb + lightColor * 2.5 * min(max(lightmap-0.999,0.0)/(1.0-0.999),1.0), voxelRangeFalloff);
+        blockLight = mix(blockLight, lpvSample.rgb * lightColor * 5.0, voxelRangeFalloff);
 
         #ifdef Hand_Held_lights
             // create handheld lightsources
