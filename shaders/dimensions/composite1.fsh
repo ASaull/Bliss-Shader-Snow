@@ -457,7 +457,7 @@ void Emission(
 	vec3 Albedo,
 	float Emission
 ){
-	if( Emission < 254.5/255.0) Lighting = mix(Lighting, Albedo * Emissive_Brightness, pow(Emission, Emissive_Curve));
+	if( Emission < 254.5/255.0) Lighting = mix(Lighting, Albedo/10.0 * Emissive_Brightness, pow(Emission, Emissive_Curve));
 }
 
 #include "/lib/indirect_lighting_effects.glsl"

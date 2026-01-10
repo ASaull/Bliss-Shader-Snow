@@ -224,6 +224,10 @@ void main() {
 	float targetExposure = (EXPOSURE_DARKENING * 0.35)/log(L + 1.0 + EXPOSURE_BRIGHTENING * 0.05);
 	// float targetExposure = 0.18/log2(L*2.5+1.045)*0.62; // choc original
 
+	// compute a dark-area boost factor [0..1]
+	float darkFactor = pow(1.0 - clamp(L / 0.1, 0.0, 1.0), 2.0); 
+	targetExposure *= 1.0 + darkFactor * 5.0;
+
 	avgL2 = clamp(mix(avgB,texelFetch2D(colortex4,ivec2(10,37),0).b,0.985),0.00003051757,65000.0);
 	float targetrodExposure = max(0.012/log2(avgL2+1.002)-0.1,0.0)*1.2;
 

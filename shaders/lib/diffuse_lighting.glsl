@@ -35,7 +35,7 @@ vec3 doBlockLightLighting(
 
     float lightmapCurve = mix(lightmapLight, 2.5, lightmapBrightspot);
     // lightmapCurve = lightmap;
-    vec3 blockLight = lightmapCurve * lightColor;
+    vec3 blockLight = lightmapCurve * lightColor / 15.0;
     
     #if defined IS_LPV_ENABLED && defined MC_GL_ARB_shader_image_load_store
         vec4 lpvSample = SampleLpvLinear(lpvPos);
@@ -51,7 +51,7 @@ vec3 doBlockLightLighting(
         voxelRangeFalloff = 1.0 - pow(1.0-pow(voxelRangeFalloff,1.5),3.0);
         
         // outside the voxel volume, lerp to vanilla lighting as a fallback
-        blockLight = mix(blockLight, lpvSample.rgb * lightColor * 5.0, voxelRangeFalloff);
+        blockLight = mix(blockLight, lpvSample.rgb/2.0 * lightColor, voxelRangeFalloff);
 
         #ifdef Hand_Held_lights
             // create handheld lightsources
