@@ -30,7 +30,7 @@ flat varying float EMISSIVE;
 flat varying int LIGHTNING;
 flat varying int PORTAL;
 flat varying int SIGN;
-flat varying float HELD_ITEM_BRIGHTNESS;
+// flat varying float HELD_ITEM_BRIGHTNESS;
 
 uniform sampler2D texture;
 uniform sampler2D normals;
@@ -40,7 +40,7 @@ uniform sampler2D depthtex0;
 uniform sampler2D noisetex;//depth
 
 uniform vec2 texelSize;
-
+uniform float alphaTestRef;
 uniform float near;
 uniform float far;
 uniform float wetness;
@@ -105,9 +105,9 @@ float R2_dither(){
 
 float blueNoise(){
 	#if TAA_MODE > 0
-  		return fract(texelFetch2D(noisetex, ivec2(gl_FragCoord.xy)%512, 0).a + 1.0/1.6180339887 * frameCounter);
+  		return fract(texelFetch(noisetex, ivec2(gl_FragCoord.xy)%512, 0).a + 1.0/1.6180339887 * frameCounter);
 	#else
-		return fract(texelFetch2D(noisetex, ivec2(gl_FragCoord.xy)%512, 0).a + 1.0/1.6180339887);
+		return fract(texelFetch(noisetex, ivec2(gl_FragCoord.xy)%512, 0).a + 1.0/1.6180339887);
 	#endif
 }
 
@@ -149,6 +149,13 @@ vec4 encode (vec3 n, vec2 lightmaps){
     return vec4(encn,vec2(lightmaps.x,lightmaps.y));
 }
 
+vec2 encode_normal (vec3 n){
+	n.xy = n.xy / dot(abs(n), vec3(1.0));
+	n.xy = n.z <= 0.0 ? (1.0 - abs(n.yx)) * sign(n.xy) : n.xy;
+    vec2 encn = clamp(n.xy * 0.5 + 0.5,-1.0,1.0);
+	
+    return encn;
+}
 //encoding by jodie
 float encodeVec2(vec2 a){
     const vec2 constant1 = vec2( 1., 256.) / 65535.;
@@ -228,7 +235,7 @@ vec4 texture2D_POMSwitch(
 	if(ifPOM){
 		return texture2DGradARB(sampler, lightmapCoord, dcdxdcdy.xy, dcdxdcdy.zw);
 	}else{
-		return texture2D(sampler, lightmapCoord, LOD);
+		return texture(sampler, lightmapCoord, LOD);
 	}
 }
 
@@ -245,14 +252,26 @@ void convertHandDepth(inout float depth) {
 //////////////////////////////VOID MAIN//////////////////////////////
 
 #if defined HAND || defined ENTITIES || defined BLOCKENTITIES
-	/* RENDERTARGETS:1,8,15,2 */
+	/* RENDERTARGETS:1,8,2 */
+	
+	layout(location = 0) out vec4 DEFERRED_DATA;
+	layout(location = 1) out vec4 SPECULAR_DATA;
+	layout(location = 2) out vec4 EXTRA_STUFF;
+
 #else
-	/* RENDERTARGETS:1,8,15 */
+	/* RENDERTARGETS:1,8 */
+
+	layout(location = 0) out vec4 DEFERRED_DATA;
+	layout(location = 1) out vec4 SPECULAR_DATA;
 #endif
 
 void main() {
 		
 	vec3 FragCoord = gl_FragCoord.xyz;
+
+	#ifdef WORLD
+		vec2 PackLightmaps = vec2(lmtexcoord.z, lmtexcoord.w);
+	#endif
 
 	#ifdef HAND
 		convertHandDepth(FragCoord.z);
@@ -282,34 +301,6 @@ void main() {
 	vec3 fragpos = toScreenSpace(FragCoord*vec3(texelSize/RENDER_SCALE,1.0)-vec3(vec2(tempOffset)*texelSize*0.5, 0.0));
 	vec3 playerpos = mat3(gbufferModelViewInverse) * fragpos  + gbufferModelViewInverse[3].xyz;
 	vec3 worldpos = playerpos + cameraPosition;
-
-	float torchlightmap = lmtexcoord.z;
-
-	#if defined Hand_Held_lights && !defined LPV_ENABLED
-		#ifdef IS_IRIS
-			vec3 playerCamPos = eyePosition;
-		#else
-			vec3 playerCamPos = cameraPosition;
-		#endif
-
-		#ifdef VIVECRAFT
-        	if (vivecraftIsVR) { 
-				playerCamPos = cameraPosition - vivecraftRelativeMainHandPos;
-			}
-		#endif
-
-		// if(HELD_ITEM_BRIGHTNESS > 0.0) torchlightmap = max(torchlightmap, HELD_ITEM_BRIGHTNESS * clamp( pow(max(1.0-length(worldpos-playerCamPos)/HANDHELD_LIGHT_RANGE,0.0),1.5),0.0,1.0));
-		if(HELD_ITEM_BRIGHTNESS > 0.0){ 
-			
-			float pointLight = clamp(1.0-(length(worldpos-playerCamPos)-1)/HANDHELD_LIGHT_RANGE,0.0,1.0);
-			
-			torchlightmap = mix(torchlightmap, HELD_ITEM_BRIGHTNESS, pointLight);
-		}
-
-		#ifdef HAND
-			torchlightmap *= 0.9;
-		#endif
-	#endif
 	
 	float lightmap = clamp( (lmtexcoord.w-0.9) * 10.0,0.,1.);
 	vec2 adjustedTexCoord = lmtexcoord.xy;
@@ -338,33 +329,30 @@ void main() {
 	if (falloff > 0.0) {
 
 		float depthmap = readNormal(vtexcoord.st).a;
-		float used_POM_DEPTH = 1.0;
-		float pomdepth = POM_DEPTH*falloff;
+		float pomdepth = (float(POM_DEPTH)/100.0)*falloff;
 
  		if ( viewVector.z < 0.0 && depthmap < 0.9999 && depthmap > 0.00001) {	
 			float noise = blueNoise();
 			#ifdef Adaptive_Step_length
 				vec3 interval = (viewVector.xyz / -viewVector.z / MAX_OCCLUSION_POINTS * pomdepth) * clamp(1.0-pow(depthmap,2),0.1,1.0);
-				used_POM_DEPTH = 1.0;
 			#else
-				vec3 interval = viewVector.xyz /-viewVector.z/MAX_OCCLUSION_POINTS*pomdepth;
+				vec3 interval = viewVector.xyz / -viewVector.z / MAX_OCCLUSION_POINTS*pomdepth;
 			#endif
 			vec3 coord = vec3(vtexcoord.st , 1.0);
 
-			coord += interval * noise * used_POM_DEPTH;
+			coord += interval * noise;
 
 			float sumVec = noise;
 			for (int loopCount = 0; (loopCount < MAX_OCCLUSION_POINTS) && (1.0 - pomdepth + pomdepth * readNormal(coord.st).a  ) < coord.p  && coord.p >= 0.0; ++loopCount) {
-				coord = coord + interval  * used_POM_DEPTH; 
-				sumVec += used_POM_DEPTH;
+				coord = coord + interval ; 
+				sumVec += 1.0;
 
 				#if defined POM_OFFSET_SHADOW_BIAS
-					// absolutely disgusting but works for now
-					if(loopCount > MAX_OCCLUSION_POINTS*0.01 * POM_DEPTH * 30.0) saveDepth = max(0.20,saveDepth);
-					if(loopCount > MAX_OCCLUSION_POINTS*0.02 * POM_DEPTH * 30.0) saveDepth = max(0.25,saveDepth);
-					if(loopCount > MAX_OCCLUSION_POINTS*0.03 * POM_DEPTH * 30.0) saveDepth = max(0.30,saveDepth);
-					if(loopCount > MAX_OCCLUSION_POINTS*0.05 * POM_DEPTH * 30.0) saveDepth = max(0.35,saveDepth);
-					if(loopCount > MAX_OCCLUSION_POINTS*0.06 * POM_DEPTH * 30.0) saveDepth = max(0.40,saveDepth);
+					#ifdef Adaptive_Step_length
+						saveDepth += clamp((1.0/MAX_OCCLUSION_POINTS)*clamp(1.0-pow(depthmap,2),0.1,1.0),0.0,1.0);
+					#else
+						saveDepth += clamp(1.0/MAX_OCCLUSION_POINTS,0.0,1.0);
+					#endif
 				#endif
 			}
 	
@@ -392,13 +380,14 @@ void main() {
 	////////////////////////////////	ALBEDO		////////////////////////////////
 	//////////////////////////////// 				//////////////////////////////// 
 	float textureLOD = bias();
-	vec4 Albedo = texture2D_POMSwitch(texture, adjustedTexCoord.xy, vec4(dcdx,dcdy), ifPOM, textureLOD) * color;
-
-	#if defined HAND
-		if (Albedo.a < 0.1) discard;
+	vec4 Albedo = texture2D_POMSwitch(texture, adjustedTexCoord.xy, vec4(dcdx,dcdy), ifPOM, textureLOD);
+	
+	#ifndef COLORWHEEL
+		if(Albedo.a < alphaTestRef){discard; return;}
+		Albedo *= color;
 	#endif
 
-	if(LIGHTNING > 0) Albedo = vec4(1);
+	if(LIGHTNING > 0) Albedo = vec4(1.0);
 
 	#if defined WORLD && !defined ENTITIES && !defined HAND
 	float endPortalEmission = 0.0;
@@ -439,7 +428,7 @@ void main() {
 			float verticalGradient = (i + blueNoise())/steps ;
 			float verticalGradient2 = exp(-7*(1-verticalGradient*verticalGradient));
 		
-			float density = max(max(verticalGradient - texture2D(noisetex, uv/256.0 + animation.xy).b*0.5,0.0) - (1.0-texture2D(noisetex, uv/32.0 + animation.xx).r) * (0.4 + 0.1 * (texture2D(noisetex, uv/10.0 - animation.yy).b)),0.0);
+			float density = max(max(verticalGradient - texture(noisetex, uv/256.0 + animation.xy).b*0.5,0.0) - (1.0-texture(noisetex, uv/32.0 + animation.xx).r) * (0.4 + 0.1 * (texture(noisetex, uv/10.0 - animation.yy).b)),0.0);
 		
 			float volumeCoeff = exp(-density*(i+1));
 			
@@ -460,6 +449,7 @@ void main() {
 	#ifdef WhiteWorld
 		Albedo.rgb = vec3(1.0);
 	#endif	
+	
 	#ifdef AEROCHROME_MODE
 		float gray = dot(Albedo.rgb, vec3(0.2, 1.0, 0.07));
 		if (
@@ -493,21 +483,21 @@ void main() {
 		if (Albedo.a > 0.1) Albedo.a = normalMat.a;
 		else Albedo.a = 0.0;
 		
-		#if defined POM_OFFSET_SHADOW_BIAS && !defined HAND
-			if(saveDepth > 0) Albedo.a = min(saveDepth,Albedo.a);
+		#if !defined HAND && !defined ENTITIES && defined POM && defined POM_OFFSET_SHADOW_BIAS
+			if(saveDepth > 0) Albedo.a = clamp(saveDepth*0.45,0.0,Albedo.a);
 		#endif
 	#endif
 
 	#ifdef HAND
 		if (Albedo.a > 0.1){
 			Albedo.a = 0.75;
-			gl_FragData[3] = vec4(0.0);
+			EXTRA_STUFF.xyzw = vec4(0.0);
 		} else {
 			Albedo.a = 1.0;
 		}
 	#endif
 	#if defined PARTICLE_RENDERING_FIX && (defined ENTITIES || defined BLOCKENTITIES)
-		gl_FragData[3] = vec4(0.0);
+		EXTRA_STUFF.xyzw = vec4(0.0);
 	#endif
 
 	
@@ -530,6 +520,13 @@ void main() {
 		normal = applyBump(tbnMatrix, NormalTex.xyz);
 	#endif
 	
+	#ifdef COLORWHEEL
+    	float ao;
+    	vec4 overlayColor;
+
+    	clrwl_computeFragment(Albedo, Albedo, PackLightmaps, ao, overlayColor);
+	#endif
+
 	//////////////////////////////// 				////////////////////////////////
 	////////////////////////////////	SPECULAR	////////////////////////////////
 	//////////////////////////////// 				//////////////////////////////// 
@@ -537,60 +534,47 @@ void main() {
 	#ifdef WORLD
 		vec4 SpecularTex = texture2D_POMSwitch(specular, adjustedTexCoord.xy, vec4(dcdx,dcdy), ifPOM,textureLOD);
 
-		// SpecularTex.r = max(SpecularTex.r, rainfall);
-		// SpecularTex.g = max(SpecularTex.g, max(Puddle_shape*0.02,0.02));
-
-		gl_FragData[1] = vec4(0.0,0.0,0.0,0.0);
-		gl_FragData[1].rg = SpecularTex.rg;
+		vec4 specularData = vec4(0.0);
+		
+		specularData.rg = SpecularTex.rg;
 
 		#if EMISSIVE_TYPE == 0
-			gl_FragData[1].a = 0.0;
-		#endif
-
-		#if EMISSIVE_TYPE == 1
-			gl_FragData[1].a = EMISSIVE;
-		#endif
-
-		#if EMISSIVE_TYPE == 2
-			gl_FragData[1].a = SpecularTex.a;
-			if(SpecularTex.a <= 0.0) gl_FragData[1].a = EMISSIVE;
-		#endif
-
-		#if EMISSIVE_TYPE == 3		
-			gl_FragData[1].a = SpecularTex.a;
+			specularData.a = 0.0;
+		#elif EMISSIVE_TYPE == 1
+			specularData.a = EMISSIVE;
+		#elif EMISSIVE_TYPE == 2
+			if(SpecularTex.a > 0.0) {
+				specularData.a = EMISSIVE;
+			}else{
+				specularData.a = SpecularTex.a;
+			}
+		#elif EMISSIVE_TYPE == 3		
+			specularData.a = SpecularTex.a;
 		#endif
 		
-		#if  defined WORLD && !defined ENTITIES && !defined HAND
-			if(PORTAL > 0) gl_FragData[1].a = endPortalEmission;
+		#if defined WORLD && !defined ENTITIES && !defined HAND
+			if(PORTAL > 0) specularData.a = endPortalEmission;
 		#endif
 
 		#if SSS_TYPE == 0
-			gl_FragData[1].b = 0.0;
+			specularData.b = 0.0;
+		#elif SSS_TYPE == 1
+			specularData.b = SSSAMOUNT;
+		#elif SSS_TYPE == 2
+			specularData.b = SpecularTex.b;
+			if(SpecularTex.b < 65.0/255.0) specularData.b = SSSAMOUNT;
+		#elif SSS_TYPE == 3		
+			specularData.b = SpecularTex.b;
 		#endif
 
-		#if SSS_TYPE == 1
-			gl_FragData[1].b = SSSAMOUNT;
-		#endif
+		vec4 otherData = clamp(vec4(viewToWorld(FlatNormals) * 0.5 + 0.5, VanillaAO),0.0,1.0);
 
-		#if SSS_TYPE == 2
-			gl_FragData[1].b = SpecularTex.b;
-			if(SpecularTex.b < 65.0/255.0) gl_FragData[1].b = SSSAMOUNT;
-		#endif
-
-		#if SSS_TYPE == 3		
-			gl_FragData[1].b = SpecularTex.b;
-		#endif
-
-
-		#if DEBUG_VIEW == debug_MATERIAL_SSS
-			Albedo.rgb = vec3(0.1);
-			if(SSSAMOUNT > 0.0) Albedo.rgb = vec3(0.0,SSSAMOUNT,0.0);
-		#endif
-		#if DEBUG_VIEW == debug_MATERIAL_EMISSION
-			Albedo.rgb = vec3(0.1);
-			if(EMISSIVE > 0.0) Albedo.rgb = vec3(0.0,EMISSIVE,0.0);
-			if(EMISSIVE >= 1.0) Albedo.rgb = vec3(1.0,0.0,0.0);
-		#endif
+		SPECULAR_DATA.xyzw = vec4(
+			encodeVec2(specularData.x, otherData.x),
+			encodeVec2(specularData.y, otherData.y),
+			encodeVec2(specularData.z, otherData.z),
+			encodeVec2(specularData.w, otherData.w)
+			);
 	#endif
 
 	// hit glow effect...
@@ -607,21 +591,22 @@ void main() {
 	#endif
 
 	#ifdef WORLD
-		vec2 PackLightmaps = vec2(torchlightmap, lmtexcoord.w);
-		
-		// special curve to give more precision on high/low values of the gradient. this curve will be inverted after sampling and decoding.
-		// PackLightmaps = pow(1.0-pow(1.0-PackLightmaps,vec2(0.5)),vec2(0.5));
-		
 		#if defined WORLD && !defined HAND && !defined ENTITIES
 			// some dither to lightmaps to reduce banding.
 			PackLightmaps = clamp( PackLightmaps + PackLightmaps * (interleaved_gradientNoise()-0.5)*0.005,0,1);
 		#endif
 
-		vec4 data1 = clamp( encode(viewToWorld(normal), PackLightmaps), 0.0, 1.0);
+		vec4 data1 = clamp(encode(viewToWorld(normal), PackLightmaps), 0.0, 1.0);
 
-		gl_FragData[0] = vec4(encodeVec2(Albedo.x,data1.x),	encodeVec2(Albedo.y,data1.y),	encodeVec2(Albedo.z,data1.z),	encodeVec2(data1.w,Albedo.w));
+		Albedo = clamp(Albedo,0,1);
+		data1 = clamp(data1,0,1);
 
-		gl_FragData[2] = vec4(viewToWorld(FlatNormals) * 0.5 + 0.5, VanillaAO);	
+		DEFERRED_DATA.xyzw = vec4(
+			encodeVec2(Albedo.x,data1.x),
+			encodeVec2(Albedo.y,data1.y),
+			encodeVec2(Albedo.z,data1.z),
+			encodeVec2(data1.w,Albedo.w)
+			);
+
 	#endif
-	
 }

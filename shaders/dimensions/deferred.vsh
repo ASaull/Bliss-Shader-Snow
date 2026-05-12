@@ -206,15 +206,15 @@ void main() {
 	for (int i = 0; i < maxITexp; i++){
 			vec2 ij = R2_samples((frameCounter%2000)*maxITexp+i);
 			vec2 tc = 0.5 + (ij-0.5) * 0.7;
-			vec3 sp = texture2D(colortex6, tc/16. * resScale+vec2(0.375*resScale.x+4.5*texelSize.x,.0)).rgb;
+			vec3 sp = texture(colortex6, tc/16. * resScale+vec2(0.375*resScale.x+4.5*texelSize.x,.0)).rgb;
 			avgExp += log(sqrt(luma(sp)));
 			avgB += log(min(dot(sp,vec3(0.07,0.22,0.71)),8e-2));
 	}
 
 	avgExp = exp(avgExp/maxITexp);
 	avgB = exp(avgB/maxITexp);
-
-	avgBrightness = clamp(mix(avgExp,texelFetch2D(colortex4,ivec2(10,37),0).g,0.95),0.00003051757,65000.0);
+	
+	avgBrightness = clamp(mix(avgExp,texelFetch(colortex4,ivec2(10,37),0).g, AUTO_EXPOSURE_ADJUST_RATE),0.00003051757,65000.0);
 
 	float L = max(avgBrightness,1e-8);
 	float keyVal = 1.03-2.0/(log(L*4000/150.*8./3.0+1.0)/log(10.0)+2.0);
@@ -228,14 +228,18 @@ void main() {
 	float darkFactor = pow(1.0 - clamp(L / 0.1, 0.0, 1.0), 2.0); 
 	targetExposure *= 1.0 + darkFactor * 10.0;
 
-	avgL2 = clamp(mix(avgB,texelFetch2D(colortex4,ivec2(10,37),0).b,0.985),0.00003051757,65000.0);
+	// compute a dark-area boost factor [0..1]
+	float darkFactor = pow(1.0 - clamp(L / 0.1, 0.0, 1.0), 2.0); 
+	targetExposure *= 1.0 + darkFactor * 10.0;
+
+	avgL2 = clamp(mix(avgB,texelFetch(colortex4,ivec2(10,37),0).b,0.985),0.00003051757,65000.0);
 	float targetrodExposure = max(0.012/log2(avgL2+1.002)-0.1,0.0)*1.2;
 
 
 	exposure = max(targetExposure*EXPOSURE_MULTIPLIER, 0.0);
 
-	float currCenterDepth = ld(texture2D(depthtex2, vec2(0.5)*RENDER_SCALE).r);
-	centerDepth = mix(sqrt(texelFetch2D(colortex4,ivec2(14,37),0).g/65000.0), currCenterDepth, clamp(DoF_Adaptation_Speed*exp(-0.016/frameTime+1.0)/(6.0+currCenterDepth*far),0.0,1.0));
+	float currCenterDepth = ld(texture(depthtex2, vec2(0.5)*RENDER_SCALE).r);
+	centerDepth = mix(sqrt(texelFetch(colortex4,ivec2(14,37),0).g/65000.0), currCenterDepth, clamp(DoF_Adaptation_Speed*exp(-0.016/frameTime+1.0)/(6.0+currCenterDepth*far),0.0,1.0));
 	centerDepth = centerDepth * centerDepth * 65000.0;
 
 	rodExposure = targetrodExposure;
@@ -243,5 +247,12 @@ void main() {
 	#ifndef AUTO_EXPOSURE
 	 exposure = Manual_exposure_value;
 	 rodExposure = clamp(log(Manual_exposure_value*2.0+1.0)-0.1,0.0,2.0);
+	#endif
+
+	#ifdef display_LUT
+		if(hideGUI == 0){
+		 exposure = Manual_exposure_value;
+		 rodExposure = clamp(log(Manual_exposure_value*2.0+1.0)-0.1,0.0,2.0);
+		}
 	#endif
 }

@@ -6,11 +6,7 @@
 #define ANTIALIASING_RELATED_SETTINGS
 #include "/lib/settings.glsl"
 
-// #if defined END_SHADER || defined NETHER_SHADER
-// 	#undef IS_LPV_ENABLED
-// #endif
-
-#ifdef IS_LPV_ENABLED
+#if defined IS_LPV_ENABLED && !defined COLORWHEEL
 	#extension GL_ARB_shader_image_load_store: enable
 	#extension GL_ARB_shading_language_packing: enable
 #endif
@@ -42,6 +38,7 @@ varying vec4 color;
 
 uniform int renderStage;
 uniform int isEyeInWater;
+uniform float alphaTestRef;
 
 uniform sampler2D texture;
 uniform sampler2D noisetex;
@@ -70,7 +67,6 @@ uniform float rainStrength;
 uniform float nightVision;
 uniform float waterEnteredAltitude;
 
-
 flat varying float HELD_ITEM_BRIGHTNESS;
 
 uniform mat4 gbufferPreviousModelView;
@@ -89,9 +85,12 @@ uniform vec3 previousCameraPosition;
 #endif
 
 
+uniform int heldItemId;
+uniform int heldItemId2;
+uniform int heldBlockLightValue;
+uniform int heldBlockLightValue2;
+
 #ifdef IS_LPV_ENABLED
-	uniform int heldItemId;
-	uniform int heldItemId2;
 	uniform int frameCounter;
 
 	#include "/lib/hsv.glsl"
@@ -100,6 +99,7 @@ uniform vec3 previousCameraPosition;
 #endif
 
 #include "/lib/diffuse_lighting.glsl"
+
 #include "/lib/sky_gradient.glsl"
 
 vec3 toLinear(vec3 sRGB){
@@ -136,6 +136,13 @@ float encodeVec2(float x,float y){
     return encodeVec2(vec2(x,y));
 }
 
+vec4 encode (vec3 n, vec2 lightmaps){
+	n.xy = n.xy / dot(abs(n), vec3(1.0));
+	n.xy = n.z <= 0.0 ? (1.0 - abs(n.yx)) * sign(n.xy) : n.xy;
+    vec2 encn = clamp(n.xy * 0.5 + 0.5,-1.0,1.0);
+	
+    return vec4(encn,vec2(lightmaps.x,lightmaps.y));
+}
 
 
 // #undef BASIC_SHADOW_FILTER
@@ -172,7 +179,7 @@ float ComputeShadowMap(inout vec3 directLightColor, vec3 playerPos, float maxDis
 		shadowmap += max(opaqueShadow, shadowDepthDiff);
 
 		// get translucent shadow data
-		vec4 translucentShadow = texture2D(shadowcolor0, projectedShadowPosition.xy);
+		vec4 translucentShadow = texture(shadowcolor0, projectedShadowPosition.xy);
 
 		// this curve simply looked the nicest. it has no other meaning.
 		float shadowAlpha = pow(1.0 - pow(translucentShadow.a,5.0),0.2);
@@ -263,244 +270,303 @@ vec4 texture2D_POMSwitch(
 float luma(vec3 color) {
 	return dot(color,vec3(0.21, 0.72, 0.07));
 }
-uniform vec3 eyePosition;
+// uniform vec3 eyePosition;
 
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
 //////////////////////////////VOID MAIN//////////////////////////////
+#if defined PARTICLES_OPAQUE && defined DEFERRED_OPAQUE_PARTICLES
+	/* RENDERTARGETS:1,8 */
+	layout(location = 0) out vec4 DEFERRED_DATA;
+	layout(location = 1) out vec4 SPECULAR_DATA;
 
-#ifdef DAMAGE_BLOCK_EFFECT
-	/* RENDERTARGETS:11 */
+	void main() {
+		vec4 Albedo = texture(texture, lmtexcoord.xy) * color;
+		if(Albedo.a < alphaTestRef){discard; return;}
+
+		// particles are billboards so all i need is the opposite direction the camera is pointing.
+		vec3 normal = clamp(-normalize(playerLookVector),-1.0,1.0);
+		vec2 lightmap = clamp(lmtexcoord.zw,0.0,1.0);
+
+		vec4 data1 = encode(normal, lightmap);
+
+		#ifdef WhiteWorld
+			Albedo.rgb = vec3(1.0);
+		#endif
+		
+		Albedo = clamp(vec4(Albedo.rgb,0.8),0.0,1.0);
+		data1 = clamp(data1,0.0,1.0);
+
+		#if DEBUG_VIEW == debug_LIGHTMAPS
+			Albedo.rgb = vec3(lmtexcoord.z,lmtexcoord.w,0.0);
+		#endif
+
+		DEFERRED_DATA.xyzw = vec4(
+			encodeVec2(Albedo.x,data1.x),
+			encodeVec2(Albedo.y,data1.y),
+			encodeVec2(Albedo.z,data1.z),
+			encodeVec2(data1.w,Albedo.w)
+			);
+			
+		vec4 specularData = vec4(0.0,0.0,0.0,0.0);
+		vec4 otherData = clamp(vec4(normal*0.5+0.5, 0.0),0.0,1.0);
+		
+		SPECULAR_DATA.xyzw = vec4(
+			encodeVec2(specularData.x, otherData.x),
+			encodeVec2(specularData.y, otherData.y),
+			encodeVec2(specularData.z, otherData.z),
+			encodeVec2(specularData.w, otherData.w)
+			);
+	}
 #else
-	/* RENDERTARGETS:2,9,11,7 */
-#endif
-
-void main() {
-	
-#ifdef DAMAGE_BLOCK_EFFECT
-	vec2 adjustedTexCoord = lmtexcoord.xy;
-	#ifdef POM
-		vec3 fragpos = toScreenSpace(gl_FragCoord.xyz*vec3(texelSize/RENDER_SCALE,1.0)-vec3(0.0));
-
-		vec3 worldpos = mat3(gbufferModelViewInverse) * fragpos  + gbufferModelViewInverse[3].xyz + cameraPosition;
-
-		vec3 normal = normalMat.xyz;
-		vec3 tangent2 = normalize(cross(tangent.rgb,normal)*tangent.w);
-		mat3 tbnMatrix = mat3(tangent.x, tangent2.x, normal.x,
-							  tangent.y, tangent2.y, normal.y,
-							  tangent.z, tangent2.z, normal.z);
-
-		adjustedTexCoord = fract(vtexcoord.st)*vtexcoordam.pq+vtexcoordam.st;
-		vec3 viewVector = normalize(tbnMatrix*fragpos);
-
-		float dist = length(fragpos);
-
-		float maxdist = MAX_OCCLUSION_DISTANCE;
-		if (dist < maxdist) {
-
-			float depthmap = readNormal(vtexcoord.st).a;
-			float used_POM_DEPTH = 1.0;
-
-	 		if ( viewVector.z < 0.0 && depthmap < 0.9999 && depthmap > 0.00001) {	
-
-				#ifdef Adaptive_Step_length
-					vec3 interval = (viewVector.xyz /-viewVector.z/MAX_OCCLUSION_POINTS * POM_DEPTH) * clamp(1.0-pow(depthmap,2),0.1,1.0);
-					used_POM_DEPTH = 1.0;
-				#else
-					vec3 interval = viewVector.xyz/-viewVector.z/ MAX_OCCLUSION_POINTS*POM_DEPTH;
-				#endif
-				vec3 coord = vec3(vtexcoord.st, 1.0);
-
-				coord += interval * used_POM_DEPTH;
-
-				float sumVec = 0.5;
-				for (int loopCount = 0; (loopCount < MAX_OCCLUSION_POINTS) && (1.0 - POM_DEPTH + POM_DEPTH * readNormal(coord.st).a  ) < coord.p  && coord.p >= 0.0; ++loopCount) {
-					coord = coord + interval * used_POM_DEPTH; 
-					sumVec += used_POM_DEPTH; 
-				}
-
-				if (coord.t < mincoord) {
-					if (readTexture(vec2(coord.s,mincoord)).a == 0.0) {
-						coord.t = mincoord;
-						discard;
-					}
-				}
-
-				adjustedTexCoord = mix(fract(coord.st)*vtexcoordam.pq+vtexcoordam.st, adjustedTexCoord, max(dist-MIX_OCCLUSION_DISTANCE,0.0)/(MAX_OCCLUSION_DISTANCE-MIX_OCCLUSION_DISTANCE));
-			}
-		}
-
-		vec4 Albedo = texture2D_POMSwitch(texture, adjustedTexCoord.xy, vec4(dcdx,dcdy));
+	#ifdef DAMAGE_BLOCK_EFFECT
+		/* RENDERTARGETS:11 */
 	#else
-		vec4 Albedo = texture2D(texture, adjustedTexCoord.xy);
-	#endif
-	
-	Albedo.rgb = toLinear(Albedo.rgb);
-
-	// if(dot(Albedo.rgb, vec3(0.33333)) < 1.0/255.0 || Albedo.a < 0.01 ) { discard; return; }
-	if(Albedo.a < 0.01 ) { discard; return; }
-	
-	gl_FragData[0] = vec4(encodeVec2(vec2(0.5)), encodeVec2(Albedo.rg), encodeVec2(vec2(Albedo.b,0.02)), 1.0);
-#endif
-
-#if !defined DAMAGE_BLOCK_EFFECT
-	
-	gl_FragData[2] = vec4(0.0);
-	
-	#ifdef LINES
-		#ifndef SELECT_BOX
-			if(SELECTION_BOX > 0) discard;
-		#endif
+		/* RENDERTARGETS:2,9,11,7 */
 	#endif
 
-	vec2 tempOffset = taaJitter;
-	vec3 viewPos = toScreenSpace(gl_FragCoord.xyz*vec3(texelSize/RENDER_SCALE,1.0)-vec3(vec2(tempOffset)*texelSize*0.5,0.0));
-	vec3 feetPlayerPos = mat3(gbufferModelViewInverse) * viewPos;
-	vec3 feetPlayerPos_normalized = normalize(feetPlayerPos);
+	void main() {
 
-	vec4 TEXTURE = texture2D(texture, lmtexcoord.xy)*color;
-	
-	#ifdef WhiteWorld
-		TEXTURE.rgb = vec3(1.0);
-	#endif
+	#ifdef DAMAGE_BLOCK_EFFECT
+		vec2 adjustedTexCoord = lmtexcoord.xy;
+		#ifdef POM
+			vec3 fragpos = toScreenSpace(gl_FragCoord.xyz*vec3(texelSize/RENDER_SCALE,1.0)-vec3(0.0));
 
-	vec3 Albedo = toLinear(TEXTURE.rgb);
-	
-	vec2 lightmap = clamp(lmtexcoord.zw,0.0,1.0);
+			vec3 worldpos = mat3(gbufferModelViewInverse) * fragpos  + gbufferModelViewInverse[3].xyz + cameraPosition;
 
+			vec3 normal = normalMat.xyz;
+			vec3 tangent2 = normalize(cross(tangent.rgb,normal)*tangent.w);
+			mat3 tbnMatrix = mat3(tangent.x, tangent2.x, normal.x,
+								  tangent.y, tangent2.y, normal.y,
+								  tangent.z, tangent2.z, normal.z);
 
-	#ifndef OVERWORLD_SHADER
-		lightmap.y = 1.0;
-	#endif
+			adjustedTexCoord = fract(vtexcoord.st)*vtexcoordam.pq+vtexcoordam.st;
+			vec3 viewVector = normalize(tbnMatrix*fragpos);
 
-	#if defined Hand_Held_lights && !defined LPV_ENABLED
-		#ifdef IS_IRIS
-			vec3 playerCamPos = eyePosition;
-		#else
-			vec3 playerCamPos = cameraPosition;
-		#endif
-		// lightmap.x = max(lightmap.x, HELD_ITEM_BRIGHTNESS * clamp( pow(max(1.0-length((feetPlayerPos+cameraPosition) - playerCamPos)/HANDHELD_LIGHT_RANGE,0.0),1.5),0.0,1.0));
-		if(HELD_ITEM_BRIGHTNESS > 0.0){ 
-			float pointLight = clamp(1.0-(length((feetPlayerPos+cameraPosition)-playerCamPos)-1.0)/HANDHELD_LIGHT_RANGE,0.0,1.0);
-			lightmap.x = mix(lightmap.x, HELD_ITEM_BRIGHTNESS, pointLight*pointLight);
-		}
-	
-	#endif
+			float dist = length(fragpos);
 
-	#ifdef WEATHER
-		gl_FragData[1] = vec4(0.0,0.0,0.0,TEXTURE.a); // for bloomy rain and stuff
-	#endif
+			float maxdist = MAX_OCCLUSION_DISTANCE;
 
-	#ifndef WEATHER
-		#ifndef LINES
-			gl_FragData[0].a = TEXTURE.a;
-		#else
-			gl_FragData[0].a = color.a;
-		#endif
-		#ifndef BLOOMY_PARTICLES
-			gl_FragData[1].a = 0.0; // for bloomy rain and stuff
-		#endif
+			float pomdepth = (float(POM_DEPTH)/100.0);
 
-		gl_FragData[3] = vec4(0.0,0.0,0.0,0.4);
+			if (dist < maxdist) {
 
-		vec3 Direct_lighting = vec3(0.0);
-		vec3 directLightColor = vec3(0.0);
+				float depthmap = readNormal(vtexcoord.st).a;
+				float used_POM_DEPTH = 1.0;
 
-		vec3 Indirect_lighting = vec3(0.0);
-		vec3 AmbientLightColor = vec3(0.0);
-		vec3 Torch_Color = vec3(TORCH_R,TORCH_G,TORCH_B);
-		vec3 MinimumLightColor = vec3(1.0);
+		 		if ( viewVector.z < 0.0 && depthmap < 0.9999 && depthmap > 0.00001) {	
 
-		if(lightmap.x >= 0.9) Torch_Color *= LIT_PARTICLE_BRIGHTNESS;
+					#ifdef Adaptive_Step_length
+						vec3 interval = (viewVector.xyz /-viewVector.z/MAX_OCCLUSION_POINTS * pomdepth) * clamp(1.0-pow(depthmap,2),0.1,1.0);
+						used_POM_DEPTH = 1.0;
+					#else
+						vec3 interval = viewVector.xyz/-viewVector.z/ MAX_OCCLUSION_POINTS*pomdepth;
+					#endif
+					vec3 coord = vec3(vtexcoord.st, 1.0);
 
-		#ifdef OVERWORLD_SHADER
-			directLightColor =  lightCol.rgb/2400.0;
-			AmbientLightColor = averageSkyCol_Clouds / 900.0;
-		
-		#ifdef USE_CUSTOM_DIFFUSE_LIGHTING_COLORS
-			directLightColor = luma(directLightColor) * vec3(DIRECTLIGHT_DIFFUSE_R,DIRECTLIGHT_DIFFUSE_G,DIRECTLIGHT_DIFFUSE_B);
-			AmbientLightColor = luma(AmbientLightColor) * vec3(INDIRECTLIGHT_DIFFUSE_R,INDIRECTLIGHT_DIFFUSE_G,INDIRECTLIGHT_DIFFUSE_B);
-		#endif
-			
-			
-			float Shadows = 1.0;
+					coord += interval * used_POM_DEPTH;
 
-			vec3 shadowPlayerPos = mat3(gbufferModelViewInverse) * viewPos + gbufferModelViewInverse[3].xyz;
+					float sumVec = 0.5;
+					for (int loopCount = 0; (loopCount < MAX_OCCLUSION_POINTS) && (1.0 - pomdepth + pomdepth * readNormal(coord.st).a  ) < coord.p  && coord.p >= 0.0; ++loopCount) {
+						coord = coord + interval * used_POM_DEPTH; 
+						sumVec += used_POM_DEPTH; 
+					}
 
-			float shadowMapFalloff = smoothstep(0.0, 1.0, min(max(1.0 - length(shadowPlayerPos) / (shadowDistance+16),0.0)*5.0,1.0));
-			float shadowMapFalloff2 = smoothstep(0.0, 1.0, min(max(1.0 - length(shadowPlayerPos) / (shadowDistance+11),0.0)*5.0,1.0));
+					if (coord.t < mincoord) {
+						if (readTexture(vec2(coord.s,mincoord)).a == 0.0) {
+							coord.t = mincoord;
+							discard;
+						}
+					}
 
-			float LM_shadowMapFallback = min(max(lightmap.y-0.8, 0.0) * 25,1.0);
-
-			Shadows = ComputeShadowMap(directLightColor, shadowPlayerPos, shadowMapFalloff);
-
-			Shadows *= mix(LM_shadowMapFallback, 1.0, shadowMapFalloff2);
-
-			Shadows *= GetCloudShadow(feetPlayerPos+cameraPosition, WsunVec);
-
-			if(isEyeInWater == 1){
-	  			float distanceFromWaterSurface = max(-(feetPlayerPos.y + (cameraPosition.y - waterEnteredAltitude)),0.0) ;
-				directLightColor *= exp(-vec3(Water_Absorb_R, Water_Absorb_G, Water_Absorb_B) * distanceFromWaterSurface);
+					adjustedTexCoord = mix(fract(coord.st)*vtexcoordam.pq+vtexcoordam.st, adjustedTexCoord, max(dist-MIX_OCCLUSION_DISTANCE,0.0)/(MAX_OCCLUSION_DISTANCE-MIX_OCCLUSION_DISTANCE));
+				}
 			}
-			Direct_lighting = directLightColor * Shadows;
 
-			// #ifndef LINES
-			// 	Direct_lighting *= phaseg(clamp(dot(feetPlayerPos_normalized, WsunVec),0.0,1.0), 0.65)*2 + 0.5;
-			// #endif
-
-			#ifdef IS_IRIS
-				AmbientLightColor *= 2.5;
-			#else
-				AmbientLightColor *= 0.5;
-			#endif
-			
-			Indirect_lighting = doIndirectLighting(AmbientLightColor, MinimumLightColor, lightmap.y);
-		#endif
-		
-		#ifdef NETHER_SHADER
-			Indirect_lighting = volumetricsFromTex(vec3(0.0,1.0,0.0), colortex4, 6).rgb / 1200.0;
-		#endif
-
-		#ifdef END_SHADER
-			Indirect_lighting = vec3(0.3,0.6,1.0) * 0.1;
-		#endif
-
-	///////////////////////// BLOCKLIGHT LIGHTING OR LPV LIGHTING OR FLOODFILL COLORED LIGHTING
-		#ifdef IS_LPV_ENABLED
-			vec3 lpvPos = GetLpvPosition(feetPlayerPos);
+			vec4 Albedo = texture2D_POMSwitch(texture, adjustedTexCoord.xy, vec4(dcdx,dcdy));
 		#else
-			const vec3 lpvPos = vec3(0.0);
+			vec4 Albedo = texture(texture, adjustedTexCoord.xy);
 		#endif
 
-		Indirect_lighting += doBlockLightLighting( vec3(TORCH_R,TORCH_G,TORCH_B), lightmap.x, feetPlayerPos, lpvPos);
+		if(Albedo.a < alphaTestRef){discard; return;}
+
+		Albedo.rgb = toLinear(Albedo.rgb);
+
+		#if DEBUG_VIEW == debug_ALBEDO
+			vec4 unalteredAlbedo = Albedo;
+		#endif
+		// if(dot(Albedo.rgb, vec3(0.33333)) < 1.0/255.0) { discard; return; }
+		// if(Albedo.a < 0.01 ) { discard; return; }
+
+		gl_FragData[0] = vec4(encodeVec2(vec2(0.5)), encodeVec2(Albedo.rg), encodeVec2(vec2(Albedo.b,0.02)), 1.0);
+	#endif
+
+	#if !defined DAMAGE_BLOCK_EFFECT
+
+		gl_FragData[2] = vec4(0.0);
 
 		#ifdef LINES
-			gl_FragData[0].rgb = (Indirect_lighting + Direct_lighting) * toLinear(color.rgb);
+			#ifndef SELECT_BOX
+				if(SELECTION_BOX > 0) discard;
+			#endif
+		#endif
 
-			if(SELECTION_BOX > 0) gl_FragData[0].rgba = vec4(toLinear(vec3(SELECT_BOX_COL_R, SELECT_BOX_COL_G, SELECT_BOX_COL_B)), 1.0);
-			
-			float LITEMATICA_SCHEMATIC_THING_MASK = 0.0;
-			if (renderStage == MC_RENDER_STAGE_NONE){
-				LITEMATICA_SCHEMATIC_THING_MASK = 0.1;
-				gl_FragData[0] = vec4(toLinear(color.rgb), color.a);
+		vec2 tempOffset = taaJitter;
+		vec3 viewPos = toScreenSpace(gl_FragCoord.xyz*vec3(texelSize/RENDER_SCALE,1.0)-vec3(vec2(tempOffset)*texelSize*0.5,0.0));
+		vec3 feetPlayerPos = mat3(gbufferModelViewInverse) * viewPos;
+		vec3 feetPlayerPos_normalized = normalize(feetPlayerPos);
+
+		vec4 TEXTURE = texture(texture, lmtexcoord.xy);
+		if(TEXTURE.a < alphaTestRef){discard; return;}
+		TEXTURE *= color;
+
+		#ifdef WhiteWorld
+			TEXTURE.rgb = vec3(1.0);
+		#endif
+
+		vec3 Albedo = toLinear(TEXTURE.rgb);
+
+		#if DEBUG_VIEW == debug_ALBEDO
+			vec4 unalteredAlbedo = vec4(Albedo,TEXTURE.a);
+		#endif
+
+		vec2 lightmap = clamp(lmtexcoord.zw,0.0,1.0);
+
+		#if MC_VERSION < 12109
+			#if !defined OVERWORLD_SHADER
+				lightmap.y = 1.0;
+			#endif
+		#else
+			#if !defined OVERWORLD_SHADER && !defined END_SHADER
+				lightmap.y = 1.0;
+			#endif
+		#endif
+
+		#ifdef WEATHER
+			gl_FragData[1] = vec4(0.0,0.0,0.0,TEXTURE.a); // for bloomy rain and stuff
+		#endif
+
+		#ifndef WEATHER
+			#ifndef LINES
+				gl_FragData[0].a = TEXTURE.a;
+			#else
+				gl_FragData[0].a = color.a;
+			#endif
+			#ifndef BLOOMY_PARTICLES
+				gl_FragData[1].a = 0.0; // for bloomy rain and stuff
+			#endif
+
+			gl_FragData[3] = vec4(0.0,0.0,0.0,0.4);
+
+			vec3 Direct_lighting = vec3(0.0);
+			vec3 directLightColor = vec3(0.0);
+
+			vec3 Indirect_lighting = vec3(0.0);
+			vec3 AmbientLightColor = vec3(0.0);
+			vec3 Torch_Color = vec3(TORCH_R,TORCH_G,TORCH_B);
+			vec3 MinimumLightColor = vec3(1.0);
+
+			if(lightmap.x >= 0.9) Torch_Color *= LIT_PARTICLE_BRIGHTNESS;
+
+			#ifdef OVERWORLD_SHADER
+				directLightColor =  lightCol.rgb/2400.0;
+				AmbientLightColor = averageSkyCol_Clouds / 900.0;
+
+			#ifdef USE_CUSTOM_DIFFUSE_LIGHTING_COLORS
+				directLightColor = luma(directLightColor) * vec3(DIRECTLIGHT_DIFFUSE_R,DIRECTLIGHT_DIFFUSE_G,DIRECTLIGHT_DIFFUSE_B);
+				AmbientLightColor = luma(AmbientLightColor) * vec3(INDIRECTLIGHT_DIFFUSE_R,INDIRECTLIGHT_DIFFUSE_G,INDIRECTLIGHT_DIFFUSE_B);
+			#endif
+
+
+				float Shadows = 1.0;
+
+				vec3 shadowPlayerPos = mat3(gbufferModelViewInverse) * viewPos + gbufferModelViewInverse[3].xyz;
+
+				float shadowMapFalloff = smoothstep(0.0, 1.0, min(max(1.0 - length(shadowPlayerPos) / (shadowDistance+16),0.0)*5.0,1.0));
+				float shadowMapFalloff2 = smoothstep(0.0, 1.0, min(max(1.0 - length(shadowPlayerPos) / (shadowDistance+11),0.0)*5.0,1.0));
+
+				float LM_shadowMapFallback = min(max(lightmap.y-0.8, 0.0) * 25,1.0);
+
+				Shadows = ComputeShadowMap(directLightColor, shadowPlayerPos, shadowMapFalloff);
+
+				Shadows *= mix(LM_shadowMapFallback, 1.0, shadowMapFalloff2);
+
+				Shadows *= GetCloudShadow(feetPlayerPos+cameraPosition, WsunVec);
+
+				if(isEyeInWater == 1){
+		  			float distanceFromWaterSurface = max(-(feetPlayerPos.y + (cameraPosition.y - waterEnteredAltitude)),0.0) ;
+					directLightColor *= exp(-vec3(Water_Absorb_R, Water_Absorb_G, Water_Absorb_B) * distanceFromWaterSurface);
+				}
+				Direct_lighting = directLightColor * Shadows;
+
+				// #ifndef LINES
+				// 	Direct_lighting *= phaseg(clamp(dot(feetPlayerPos_normalized, WsunVec),0.0,1.0), 0.65)*2 + 0.5;
+				// #endif
+
+				#ifdef IS_IRIS
+					AmbientLightColor *= 2.5;
+				#else
+					AmbientLightColor *= 0.5;
+				#endif
+
+				Indirect_lighting = doIndirectLighting(AmbientLightColor, MinimumLightColor, lightmap.y);
+			#endif
+
+			#ifdef NETHER_SHADER
+				Indirect_lighting = volumetricsFromTex(vec3(0.0,1.0,0.0), colortex4, 6).rgb / 1200.0;
+			#endif
+
+			#ifdef END_SHADER
+				Indirect_lighting = vec3(0.3,0.6,1.0);
+				Indirect_lighting *= 0.035 * lightmap.y*lightmap.y;
+				Indirect_lighting += MinimumLightColor * (MIN_LIGHT_AMOUNT * 0.02 * 0.2 + nightVision*0.02);
+			#endif
+
+		///////////////////////// BLOCKLIGHT LIGHTING OR LPV LIGHTING OR FLOODFILL COLORED LIGHTING
+			#ifdef IS_LPV_ENABLED
+				vec3 lpvPos = GetLpvPosition(feetPlayerPos);
+			#else
+				const vec3 lpvPos = vec3(0.0);
+			#endif
+
+			Indirect_lighting += doBlockLightLighting( vec3(TORCH_R,TORCH_G,TORCH_B), lightmap.x, feetPlayerPos, lpvPos);
+
+			#ifdef LINES
+				gl_FragData[0].rgb = (Indirect_lighting + Direct_lighting) * toLinear(color.rgb);
+
+				if(SELECTION_BOX > 0) gl_FragData[0].rgba = vec4(toLinear(vec3(SELECT_BOX_COL_R, SELECT_BOX_COL_G, SELECT_BOX_COL_B)), 1.0);
+
+				float LITEMATICA_SCHEMATIC_THING_MASK = 0.0;
+				if (renderStage == MC_RENDER_STAGE_NONE){
+					LITEMATICA_SCHEMATIC_THING_MASK = 0.1;
+					gl_FragData[0] = vec4(toLinear(color.rgb), color.a);
+				}
+
+				gl_FragData[2] = vec4(encodeVec2(vec2(0.0)), encodeVec2(vec2(0.0)), encodeVec2(vec2(0.0)), encodeVec2(0.0, LITEMATICA_SCHEMATIC_THING_MASK));
+			#else
+				gl_FragData[0].rgb = (Indirect_lighting + Direct_lighting) * Albedo;
+			#endif
+
+			if(renderStage == MC_RENDER_STAGE_WORLD_BORDER){
+				// distance fade targeting the world border...
+				float gradientPos = (feetPlayerPos+cameraPosition).y;
+				float fadeGradient = clamp(min(1.0 - (gradientPos - 319.0)/800.0,(gradientPos + 1000.0)/800.0),0.0,1.0);
+				fadeGradient *= fadeGradient*fadeGradient;
+
+				gl_FragData[0].rgba = vec4(Albedo.rgb, TEXTURE.a) * fadeGradient;
 			}
 
-			gl_FragData[2] = vec4(encodeVec2(vec2(0.0)), encodeVec2(vec2(0.0)), encodeVec2(vec2(0.0)), encodeVec2(0.0, LITEMATICA_SCHEMATIC_THING_MASK));
-		#else
-			gl_FragData[0].rgb = (Indirect_lighting + Direct_lighting) * Albedo;
+			#if DEBUG_VIEW == debug_LIGHTMAPS
+				gl_FragData[0].rgb = vec3(lmtexcoord.z,lmtexcoord.w,0.0)*0.1;
+			#endif
+			#if DEBUG_VIEW == debug_ALBEDO
+				gl_FragData[0] = unalteredAlbedo;
+			#endif
+			gl_FragData[0].rgb *= 0.1;
 		#endif
-
-		// distance fade targeting the world border...
-		if(TEXTURE.a < 0.7 && TEXTURE.a > 0.2) gl_FragData[0] *= clamp(1.0 - length(feetPlayerPos) / 100.0 ,0.0,1.0);
-		
-		#if DEBUG_VIEW == debug_LIGHTMAPS
-			gl_FragData[0].rgb = vec3(lmtexcoord.z,lmtexcoord.w,0.0)*0.1;
-		#endif
-		
-		gl_FragData[0].rgb *= 0.1;
-		
 	#endif
+
+	}
 #endif
-}

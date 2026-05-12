@@ -8,15 +8,21 @@ const ivec3 workGroups = ivec3(6, 6, 1);
     #include "/lib/entities.glsl"
     #include "/lib/lpv_blocks.glsl"
     
+    // #define DOORS_BLOCK_LIGHT
+    // #define TRAPDOORS_BLOCK_LIGHT
+
     #define TORCH_R 1.0 // [0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.11 0.12 0.13 0.14 0.15 0.16 0.17 0.18 0.19 0.2 0.21 0.22 0.23 0.24 0.25 0.26 0.27 0.28 0.29 0.3 0.31 0.32 0.33 0.34 0.35 0.36 0.37 0.38 0.39 0.4 0.41 0.42 0.43 0.44 0.45 0.46 0.47 0.48 0.49 0.5 0.51 0.52 0.53 0.54 0.55 0.56 0.57 0.58 0.59 0.6 0.61 0.62 0.63 0.64 0.65 0.66 0.67 0.68 0.69 0.7 0.71 0.72 0.73 0.74 0.75 0.76 0.77 0.78 0.79 0.8 0.81 0.82 0.83 0.84 0.85 0.86 0.87 0.88 0.89 0.9 0.91 0.92 0.93 0.94 0.95 0.96 0.97 0.98 0.99 1.0]
     #define TORCH_G 0.5 // [0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.11 0.12 0.13 0.14 0.15 0.16 0.17 0.18 0.19 0.2 0.21 0.22 0.23 0.24 0.25 0.26 0.27 0.28 0.29 0.3 0.31 0.32 0.33 0.34 0.35 0.36 0.37 0.38 0.39 0.4 0.41 0.42 0.43 0.44 0.45 0.46 0.47 0.48 0.49 0.5 0.51 0.52 0.53 0.54 0.55 0.56 0.57 0.58 0.59 0.6 0.61 0.62 0.63 0.64 0.65 0.66 0.67 0.68 0.69 0.7 0.71 0.72 0.73 0.74 0.75 0.76 0.77 0.78 0.79 0.8 0.81 0.82 0.83 0.84 0.85 0.86 0.87 0.88 0.89 0.9 0.91 0.92 0.93 0.94 0.95 0.96 0.97 0.98 0.99 1.0]
     #define TORCH_B 0.25 // [0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.11 0.12 0.13 0.14 0.15 0.16 0.17 0.18 0.19 0.2 0.21 0.22 0.23 0.24 0.25 0.26 0.27 0.28 0.29 0.3 0.31 0.32 0.33 0.34 0.35 0.36 0.37 0.38 0.39 0.4 0.41 0.42 0.43 0.44 0.45 0.46 0.47 0.48 0.49 0.5 0.51 0.52 0.53 0.54 0.55 0.56 0.57 0.58 0.59 0.6 0.61 0.62 0.63 0.64 0.65 0.66 0.67 0.68 0.69 0.7 0.71 0.72 0.73 0.74 0.75 0.76 0.77 0.78 0.79 0.8 0.81 0.82 0.83 0.84 0.85 0.86 0.87 0.88 0.89 0.9 0.91 0.92 0.93 0.94 0.95 0.96 0.97 0.98 0.99 1.0]
+    #define LIGHT_BLOCK_R 1.0 // [0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.11 0.12 0.13 0.14 0.15 0.16 0.17 0.18 0.19 0.2 0.21 0.22 0.23 0.24 0.25 0.26 0.27 0.28 0.29 0.3 0.31 0.32 0.33 0.34 0.35 0.36 0.37 0.38 0.39 0.4 0.41 0.42 0.43 0.44 0.45 0.46 0.47 0.48 0.49 0.5 0.51 0.52 0.53 0.54 0.55 0.56 0.57 0.58 0.59 0.6 0.61 0.62 0.63 0.64 0.65 0.66 0.67 0.68 0.69 0.7 0.71 0.72 0.73 0.74 0.75 0.76 0.77 0.78 0.79 0.8 0.81 0.82 0.83 0.84 0.85 0.86 0.87 0.88 0.89 0.9 0.91 0.92 0.93 0.94 0.95 0.96 0.97 0.98 0.99 1.0]
+    #define LIGHT_BLOCK_G 1.0 // [0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.11 0.12 0.13 0.14 0.15 0.16 0.17 0.18 0.19 0.2 0.21 0.22 0.23 0.24 0.25 0.26 0.27 0.28 0.29 0.3 0.31 0.32 0.33 0.34 0.35 0.36 0.37 0.38 0.39 0.4 0.41 0.42 0.43 0.44 0.45 0.46 0.47 0.48 0.49 0.5 0.51 0.52 0.53 0.54 0.55 0.56 0.57 0.58 0.59 0.6 0.61 0.62 0.63 0.64 0.65 0.66 0.67 0.68 0.69 0.7 0.71 0.72 0.73 0.74 0.75 0.76 0.77 0.78 0.79 0.8 0.81 0.82 0.83 0.84 0.85 0.86 0.87 0.88 0.89 0.9 0.91 0.92 0.93 0.94 0.95 0.96 0.97 0.98 0.99 1.0]
+    #define LIGHT_BLOCK_B 1.0 // [0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.11 0.12 0.13 0.14 0.15 0.16 0.17 0.18 0.19 0.2 0.21 0.22 0.23 0.24 0.25 0.26 0.27 0.28 0.29 0.3 0.31 0.32 0.33 0.34 0.35 0.36 0.37 0.38 0.39 0.4 0.41 0.42 0.43 0.44 0.45 0.46 0.47 0.48 0.49 0.5 0.51 0.52 0.53 0.54 0.55 0.56 0.57 0.58 0.59 0.6 0.61 0.62 0.63 0.64 0.65 0.66 0.67 0.68 0.69 0.7 0.71 0.72 0.73 0.74 0.75 0.76 0.77 0.78 0.79 0.8 0.81 0.82 0.83 0.84 0.85 0.86 0.87 0.88 0.89 0.9 0.91 0.92 0.93 0.94 0.95 0.96 0.97 0.98 0.99 1.0]
 
     const vec3 LightColor_Amethyst = vec3(0.464, 0.227, 0.788);
     const vec3 LightColor_Candles = vec3(1.0, 0.4, 0.1);
-    const vec3 LightColor_CopperBulb = vec3(1.0);
-    const vec3 LightColor_LightBlock = vec3(1.0);
-    const vec3 LightColor_RedstoneTorch = vec3(0.939, 0.305, 0.164);
+    const vec3 LightColor_CopperBulb = vec3(0.8,0.6,0.3);
+    const vec3 LightColor_LightBlock = vec3(LIGHT_BLOCK_R,LIGHT_BLOCK_G,LIGHT_BLOCK_B);
+    const vec3 LightColor_RedstoneTorch = vec3(1.0, 0.1, 0.0);
     const vec3 LightColor_SeaPickle = vec3(0.283, 0.394, 0.212);
 
     const vec3 LightColor_Candles_Black = vec3(0.200);
@@ -117,7 +123,7 @@ void main() {
         }
 
         if (blockId == BLOCK_BEACON || blockId == ITEM_BEACON) {
-            lightColor = vec3(1.0);
+            lightColor = vec3(0.3,0.5,1.0);
             lightRange = 15.0;
         }
 
@@ -449,7 +455,7 @@ void main() {
         }
 
         if (blockId == BLOCK_CAVE_VINE_BERRIES || blockId == ITEM_GLOW_BERRIES) {
-            lightColor = vec3(1.0, 1.0, 0.5);
+            lightColor = vec3(0.9, 1.0, 0.2);
             
             lightRange = 14.0;
             mixWeight = 1.0;
@@ -491,8 +497,8 @@ void main() {
         }
 
         if (blockId == BLOCK_END_GATEWAY) {
-            lightColor = vec3(1.0);
-            lightRange = 15.0;
+            lightColor = vec3(0.1,0.7,1.0);
+            lightRange = 4.0;
         }
 
         if (blockId == BLOCK_END_ROD || blockId == ITEM_END_ROD) {
@@ -502,7 +508,7 @@ void main() {
         }
 
         if (blockId == BLOCK_FIRE) {
-            lightColor = vec3(0.864, 0.598, 0.348);
+            lightColor = vec3(0.9, 0.3, 0.0);
             lightRange = 15.0;
             mixWeight = 1.0;
         }
@@ -514,22 +520,22 @@ void main() {
         }
 
         if (blockId == BLOCK_FROGLIGHT_OCHRE || blockId == ITEM_FROGLIGHT_OCHRE) {
-            lightColor = vec3(0.768, 0.648, 0.108);
+            lightColor = vec3(0.768, 0.60, 0.0);
             lightRange = 15.0;
         }
 
         if (blockId == BLOCK_FROGLIGHT_PEARLESCENT || blockId == ITEM_FROGLIGHT_PEARLESCENT) {
-            lightColor = vec3(0.737, 0.435, 0.658);
+            lightColor = vec3(0.737, 0.435, 0.858);
             lightRange = 15.0;
         }
 
         if (blockId == BLOCK_FROGLIGHT_VERDANT || blockId == ITEM_FROGLIGHT_VERDANT) {
-            lightColor = vec3(0.463, 0.763, 0.409);
+            lightColor = vec3(0.463, 0.963, 0.509);
             lightRange = 15.0;
         }
 
         if (blockId == BLOCK_FURNACE_LIT) {
-            lightColor = vec3(0.8, 0.7, 0.1);
+            lightColor = vec3(1.0, 0.4, 0.15);
             lightRange = 13.0;
         }
 
@@ -539,7 +545,7 @@ void main() {
         }
 
         if (blockId == BLOCK_GLOWSTONE || blockId == ITEM_GLOWSTONE) {
-            lightColor = vec3(0.747, 0.594, 0.326);
+            lightColor = vec3(1.0, 0.8, 0.3);
             lightRange = 15.0;
         }
 
@@ -549,22 +555,22 @@ void main() {
         }
 
         if (blockId == BLOCK_JACK_O_LANTERN || blockId == ITEM_JACK_O_LANTERN) {
-            lightColor = vec3(0.864, 0.598, 0.348);
+            lightColor = vec3(0.636, 0.509, 0.179);
             lightRange = 15.0;
         }
 
         if (blockId == BLOCK_LANTERN || blockId == ITEM_LANTERN) {
-            lightColor = vec3(0.839, 0.541, 0.2);
+            lightColor = vec3(1.0, 0.55, 0.2);
             lightRange = 15.0;
             mixWeight = 0.8;
         }
 
         if (blockId == BLOCK_LAVA) {
-            lightColor = vec3(0.659, 0.302, 0.106);
+            lightColor = vec3(1.0, 0.3, 0.05);
             lightRange = 15.0;
         }
         else if (blockId == ITEM_LAVA_BUCKET) {
-            lightColor = vec3(0.659, 0.302, 0.106);
+            lightColor = vec3(1.0, 0.3, 0.05);
             lightRange = 8.0;
         }
 
@@ -622,7 +628,7 @@ void main() {
         }
 
         if (blockId == BLOCK_MAGMA || blockId == ITEM_MAGMA) {
-            lightColor = vec3(0.747, 0.323, 0.110);
+            lightColor = vec3(1.0, 0.3, 0.0);
             lightRange = 3.0;
             mixWeight = 0.0;
         }
@@ -634,7 +640,7 @@ void main() {
         }
 
         if (blockId == BLOCK_REDSTONE_LAMP_LIT) {
-            lightColor = vec3(0.953, 0.796, 0.496);
+            lightColor = vec3(0.8,0.5,0.3);
             lightRange = 15.0;
             mixWeight = 0.0;
         }
@@ -737,12 +743,12 @@ void main() {
         #endif
 
             case BLOCK_RESPAWN_ANCHOR_4:
-                lightColor = vec3(1.0, 0.2, 1.0);
+                lightColor = vec3(1.0, 0.0, 1.0);
                 lightRange = 15.0;
                 break;
             case BLOCK_SCULK_SENSOR_ACTIVE:
                 lightColor = vec3(0.1, 0.4, 1.0);
-                lightRange = 1.0;
+                lightRange = 2.0;
                 break;
             case BLOCK_SEA_PICKLE_WET_1:
                 lightColor = LightColor_SeaPickle;
@@ -772,7 +778,7 @@ void main() {
         }
 
         if (blockId == BLOCK_SHROOMLIGHT || blockId == ITEM_SHROOMLIGHT) {
-            lightColor = vec3(0.848, 0.469, 0.205);
+            lightColor = vec3(0.7, 0.35, 0.3);
             lightRange = 15.0;
         }
 
@@ -791,9 +797,7 @@ void main() {
             mixWeight = 0.8;
         }
 
-        if (blockId == BLOCK_TORCH || blockId == ITEM_TORCH ||
-            blockId == BLOCK_LANTERN || blockId == ITEM_LANTERN
-        ) {
+        if (blockId == BLOCK_TORCH || blockId == ITEM_TORCH) {
             lightColor = vec3(TORCH_R, TORCH_G, TORCH_B);
             lightRange = 14.0;
             mixWeight = 0.8;
@@ -962,19 +966,27 @@ void main() {
                 break;
 
             case BLOCK_DOOR_N:
-                mixMask = BuildLpvMask(0u, 1u, 1u, 1u, 1u, 1u);
+                #ifdef DOORS_BLOCK_LIGHT
+                    mixMask = BuildLpvMask(0u, 1u, 1u, 1u, 1u, 1u);
+                #endif
                 mixWeight = 0.8;
                 break;
             case BLOCK_DOOR_E:
-                mixMask = BuildLpvMask(1u, 0u, 1u, 1u, 1u, 1u);
+                #ifdef DOORS_BLOCK_LIGHT
+                    mixMask = BuildLpvMask(1u, 0u, 1u, 1u, 1u, 1u);
+                #endif
                 mixWeight = 0.8;
                 break;
             case BLOCK_DOOR_S:
-                mixMask = BuildLpvMask(1u, 1u, 0u, 1u, 1u, 1u);
+                #ifdef DOORS_BLOCK_LIGHT
+                    mixMask = BuildLpvMask(1u, 1u, 0u, 1u, 1u, 1u);
+                #endif
                 mixWeight = 0.8;
                 break;
             case BLOCK_DOOR_W:
-                mixMask = BuildLpvMask(1u, 1u, 1u, 0u, 1u, 1u);
+                #ifdef DOORS_BLOCK_LIGHT
+                    mixMask = BuildLpvMask(1u, 1u, 1u, 0u, 1u, 1u);
+                #endif
                 mixWeight = 0.8;
                 break;
 
@@ -988,33 +1000,46 @@ void main() {
                 mixWeight = 0.5;
                 break;
             case BLOCK_SLAB_BOTTOM:
+
             case BLOCK_SNOW_LAYERS:
                 mixMask = BuildLpvMask(1u, 1u, 1u, 1u, 1u, 0u);
                 mixWeight = 0.5;
                 break;
 
             case BLOCK_TRAPDOOR_BOTTOM:
-                mixMask = BuildLpvMask(1u, 1u, 1u, 1u, 1u, 0u);
+                #ifdef TRAPDOORS_BLOCK_LIGHT
+                    mixMask = BuildLpvMask(1u, 1u, 1u, 1u, 1u, 0u);
+                #endif
                 mixWeight = 0.8;
                 break;
             case BLOCK_TRAPDOOR_TOP:
-                mixMask = BuildLpvMask(1u, 1u, 1u, 1u, 0u, 1u);
+                #ifdef TRAPDOORS_BLOCK_LIGHT
+                    mixMask = BuildLpvMask(1u, 1u, 1u, 1u, 0u, 1u);
+                #endif
                 mixWeight = 0.8;
                 break;
             case BLOCK_TRAPDOOR_N:
-                mixMask = BuildLpvMask(0u, 1u, 1u, 1u, 1u, 1u);
+                #ifdef TRAPDOORS_BLOCK_LIGHT
+                    mixMask = BuildLpvMask(0u, 1u, 1u, 1u, 1u, 1u);
+                #endif
                 mixWeight = 0.8;
                 break;
             case BLOCK_TRAPDOOR_E:
-                mixMask = BuildLpvMask(1u, 0u, 1u, 1u, 1u, 1u);
+                #ifdef TRAPDOORS_BLOCK_LIGHT
+                    mixMask = BuildLpvMask(1u, 0u, 1u, 1u, 1u, 1u);
+                #endif
                 mixWeight = 0.8;
                 break;
             case BLOCK_TRAPDOOR_S:
-                mixMask = BuildLpvMask(1u, 1u, 0u, 1u, 1u, 1u);
+                #ifdef TRAPDOORS_BLOCK_LIGHT
+                    mixMask = BuildLpvMask(1u, 1u, 0u, 1u, 1u, 1u);
+                #endif
                 mixWeight = 0.8;
                 break;
             case BLOCK_TRAPDOOR_W:
-                mixMask = BuildLpvMask(1u, 1u, 1u, 0u, 1u, 1u);
+                #ifdef TRAPDOORS_BLOCK_LIGHT
+                    mixMask = BuildLpvMask(1u, 1u, 1u, 0u, 1u, 1u);
+                #endif
                 mixWeight = 0.8;
                 break;
         }

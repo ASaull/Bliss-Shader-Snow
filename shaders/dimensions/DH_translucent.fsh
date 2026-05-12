@@ -72,6 +72,7 @@ flat varying vec4 lightCol;
 flat varying vec3 WsunVec;
 flat varying vec3 WsunVec2;
 
+uniform vec3 OVERDRAW_PREVENTION_SCALE;
 
 
 // uniform mat4 dhPreviousProjection;
@@ -173,7 +174,7 @@ vec3 doScreenSpaceReflectiom(vec3 dir, vec3 position, float dither, float qualit
 
 		if(spos.x < 0 || spos.x > 1 || spos.y < 0 || spos.y > 1) return vec3(1.1);
 
-		float sampleDepth = sqrt(texelFetch2D(colortex12,ivec2(spos.xy/texelSize/4),0).a/65000.0);
+		float sampleDepth = sqrt(texelFetch(colortex12,ivec2(spos.xy/texelSize/4),0).a/65000.0);
 		float sp = DH_inv_ld(sampleDepth);
 		
 		if(sp < max(minZ, maxZ) && sp > min(minZ, maxZ)) return vec3(spos.xy/RENDER_SCALE,sp);
@@ -245,6 +246,7 @@ vec3 applyBump(mat3 tbnMatrix, vec3 bump, float puddle_values){
 	return normalize(bump*tbnMatrix);
 }
 
+
 #define FORWARD_SPECULAR
 #define FORWARD_SSR_QUALITY 30 // [0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 25 30 35 40 45 50 55 60 65 70 75 80 85 90 95 100 200 300 400 500]
 #define FORWARD_BACKGROUND_REFLECTION
@@ -273,8 +275,9 @@ if (gl_FragCoord.x * texelSize.x < 1.0  && gl_FragCoord.y * texelSize.y < 1.0 )	
 		#else
 			float maxOverdrawDistance = OVERDRAW_MAX_DISTANCE;
 		#endif
+        float velocity = clamp(1.0 - length(OVERDRAW_PREVENTION_SCALE),1e-6,1.0);
 
-        if(length(playerPos) < clamp(far-16*4, 16, maxOverdrawDistance) ){ discard; return;}
+        if(length(playerPos) < clamp(far-16*4, 16, maxOverdrawDistance)*velocity ){ discard; return;}
     #endif
 
 	vec3 waterNormals = worldSpaceNormals;
@@ -297,6 +300,10 @@ if (gl_FragCoord.x * texelSize.x < 1.0  && gl_FragCoord.y * texelSize.y < 1.0 )	
     gl_FragData[0] = gcolor;
     // float UnchangedAlpha = gl_FragData[0].a;
 
+	#if DEBUG_VIEW == debug_ALBEDO
+		vec4 unalteredAlbedo = vec4(toLinear(gl_FragData[0].rgb),gl_FragData[0].a);
+	#endif
+	
 	#ifdef WhiteWorld
 		gl_FragData[0].rgb = vec3(1.0);
 		gl_FragData[0].a = 1.0;
@@ -405,7 +412,7 @@ if (gl_FragCoord.x * texelSize.x < 1.0  && gl_FragCoord.y * texelSize.y < 1.0 )	
             	previousPosition.xy = projMAD(dhPreviousProjection, previousPosition).xy / -previousPosition.z * 0.5 + 0.5;
             	if (previousPosition.x > 0.0 && previousPosition.y > 0.0 && previousPosition.x < 1.0 && previousPosition.y < 1.0) {
 					Reflections.a = 1.0;
-					Reflections.rgb = texture2D(colortex5, previousPosition.xy).rgb;
+					Reflections.rgb = texture(colortex5, previousPosition.xy).rgb;
             	}
             }else{
 				if (rtPos.x > 0.0 && rtPos.y > 0.0 && rtPos.x < 1.0 && rtPos.y < 1.0) SSR_HIT_SKY_MASK = 1.0;
@@ -433,17 +440,31 @@ if (gl_FragCoord.x * texelSize.x < 1.0  && gl_FragCoord.y * texelSize.y < 1.0 )	
 		// gl_FragData[0].rgb = normals*0.1;
     
     #ifdef DH_OVERDRAW_PREVENTION
-        float distancefade = min(max(1.0 - length(playerPos)/clamp(far-16*4, 16, maxOverdrawDistance),0.0)*5,1.0);
+        float distancefade = min(max(1.0 - length(playerPos)/(clamp(far-16*4, 16, maxOverdrawDistance)*velocity),0.0)*5,1.0);
 
-        if(texture2D(depthtex0, gl_FragCoord.xy*texelSize).x < 1.0 || distancefade > 0.0){
+        if(texture(depthtex0, gl_FragCoord.xy*texelSize).x < 1.0 || distancefade > 0.0){
             gl_FragData[0].a = 0.0;
             material = 0.0;
+			#if DEBUG_VIEW == debug_ALBEDO
+				unalteredAlbedo.a = 0.0;
+			#endif
+        }
+	#else
+        if(texture(depthtex0, gl_FragCoord.xy*texelSize).x < 1.0){
+            gl_FragData[0].a = 0.0;
+            material = 0.0;
+			#if DEBUG_VIEW == debug_ALBEDO
+				unalteredAlbedo.a = 0.0;
+			#endif
         }
     #endif
 	
     #if DEBUG_VIEW == debug_DH_WATER_BLENDING
         if(gl_FragCoord.x*texelSize.x > 0.53) gl_FragData[0] = vec4(0.0);
     #endif
+	#if DEBUG_VIEW == debug_ALBEDO
+		gl_FragData[0] = unalteredAlbedo;
+	#endif
    	// #if DEBUG_VIEW == debug_MATERIAL_SSS
 	// 	Albedo.rgb = vec3(0.1);
 	// 	if(SSSAMOUNT > 0.0) Albedo.rgb = vec3(0.0,SSSAMOUNT,0.0);

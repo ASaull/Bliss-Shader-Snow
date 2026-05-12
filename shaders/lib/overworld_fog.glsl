@@ -9,7 +9,7 @@ float densityAtPosFog(in vec3 pos){
 	f = (f*f) * (3.-2.*f);
 	vec2 uv =  p.xz + f.xz + p.y * vec2(0.0,193.0);
 	vec2 coord =  uv / 512.0;
-	vec2 xy = texture2D(noisetex, coord).yx;
+	vec2 xy = texture(noisetex, coord).yx;
 	return mix(xy.r,xy.g, f.y);
 }
 
@@ -58,7 +58,7 @@ vec3 sampleShadowmapVL(vec3 start, vec3 shadowMapRayStartPos, vec3 shadowMapRayP
 			shadowColor = vec3(shadow2D(shadowtex0, shadowPos).x);
 
 			if(shadow2D(shadowtex1, shadowPos).x > shadowPos.z && shadowColor.x < 1.0){
-				vec4 translucentShadow = texture2D(shadowcolor0, shadowPos.xy);
+				vec4 translucentShadow = texture(shadowcolor0, shadowPos.xy);
 				if(translucentShadow.a < 0.9) shadowColor = normalize(translucentShadow.rgb+0.0001);
 			}
 		#else
@@ -199,6 +199,9 @@ vec4 GetVolumetricFog(
 	// #if defined LPV_VL_FOG_ILLUMINATION && defined EXCLUDE_WRITE_TO_LUT
 	// 	,in vec3 LPV_ILLUMINATION
 	// #endif
+
+	,in vec4 phaseLevels 
+	,in float backScatterPhase
 ){
 	#ifndef TOGGLE_VL_FOG
 		return vec4(0.0,0.0,0.0,1.0);
@@ -303,7 +306,12 @@ vec4 GetVolumetricFog(
 		vec3 airDensity = kill*(rayleigh + mie);
 		vec3 airDensityPhased = rayleighPhase*rayleigh + sunPhase*mie;
 		vec3 airVolumeCoeff = exp(-airDensity*dd*rayLength);
-		vec3 airLighting = LightColor*shadows*sunPhase * airDensityPhased + AveragedAmbientColor*0.666*airDensity;
+
+		#ifdef AERIAL_PERSPECTIVE_TEST
+			vec3 airLighting = LightColor*shadows*sunPhase * airDensityPhased;
+		#else
+			vec3 airLighting = LightColor*shadows*sunPhase * airDensityPhased + AveragedAmbientColor*0.666*airDensity;
+		#endif
 		
 		#if defined LIGHTNING_FLASH && defined LIGHTNINGFLASH_VL
 			airLighting += lightningFlash*airDensity;
@@ -313,12 +321,17 @@ vec4 GetVolumetricFog(
 
 		/// GLOBAL FOG
 		float fogDensity = kill*getFogDensities(rayProgress, 0.0);
-		float fogVolumeCoeff = exp(-fogDensity*dd*rayLength);
-		vec3 fogLighting = LightColor*sunPhase*shadows + AmbientColor*skyPhase;
 
-		// #if defined LPV_VL_FOG_ILLUMINATION && defined EXCLUDE_WRITE_TO_LUT
-		// 	color += LPV_ILLUMINATION;
-		// #endif
+
+		float fogVolumeCoeff = exp(-fogDensity*dd*rayLength); 
+
+
+		float beerCoef = -4.0;
+		float powder = min(exp(beerCoef*exp(beerCoef*fogDensity)) * 3.5, 1);
+		float backscatter = powder * backScatterPhase;
+		float forwardscatter = mix(mix(phaseLevels.x, phaseLevels.y, powder), mix(phaseLevels.z, phaseLevels.w, powder), powder);
+		vec3 fogLighting = (6.28 * LightColor * (forwardscatter + backscatter))*shadows + AmbientColor*skyPhase;
+		// vec3 fogLighting = LightColor*sunPhase*shadows + AmbientColor*skyPhase;
 		
 		#if defined LIGHTNING_FLASH && defined LIGHTNINGFLASH_VL
 			fogLighting += lightningFlash;
@@ -338,13 +351,22 @@ vec4 GetVolumetricFog(
 		#endif
 
 		float localFogVolumeCoeff = exp(-localEffectDensity*dd*localRayLength);
-		vec3 localFogLighting = localFogColor_lightCol*shadows*sunPhase + localFogColor_ambientCol*skyPhase;
+		float localpowder = min(exp(beerCoef*exp(beerCoef*localEffectDensity)) * 3.5, 1);
+		float localbackscatter = localpowder * backScatterPhase;
+		float localforwardscatter = mix(mix(phaseLevels.x, phaseLevels.y, localpowder), mix(phaseLevels.z, phaseLevels.w, localpowder), localpowder);
+		vec3 localFogLighting = (6.28 * localFogColor_lightCol * (localforwardscatter + localbackscatter))*shadows + localFogColor_ambientCol*skyPhase;
+		// vec3 localFogLighting = localFogColor_lightCol*shadows*sunPhase + localFogColor_ambientCol*skyPhase;
 		
 		color += (localFogLighting - localFogLighting * localFogVolumeCoeff) * localAbsorbance;
 		
 		localAbsorbance *= localFogVolumeCoeff;
 		airAbsorbance *= airVolumeCoeff*fogVolumeCoeff*localFogVolumeCoeff;
-		absorbance *= fogVolumeCoeff*localFogVolumeCoeff*dot(airVolumeCoeff,vec3(0.33333));
+		
+		#ifdef AERIAL_PERSPECTIVE_TEST
+			absorbance *= fogVolumeCoeff*localFogVolumeCoeff;
+		#else
+			absorbance *= fogVolumeCoeff*localFogVolumeCoeff*dot(airVolumeCoeff,vec3(0.33333));
+		#endif
 	}
 	return vec4(color, absorbance);
 }

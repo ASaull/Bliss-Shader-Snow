@@ -105,7 +105,7 @@ float R2_dither(){
 	return fract(alpha.x * gl_FragCoord.x + alpha.y * gl_FragCoord.y + 1.0/1.6180339887 * frameCounter) ;
 }
 float blueNoise(){
-  return fract(texelFetch2D(noisetex, ivec2(gl_FragCoord.xy)%512, 0).a + 1.0/1.6180339887 * frameCounter);
+  return fract(texelFetch(noisetex, ivec2(gl_FragCoord.xy)%512, 0).a + 1.0/1.6180339887 * frameCounter);
 }
 
 // #define diagonal3(m) vec3((m)[0].x, (m)[1].y, m[2].z)
@@ -198,6 +198,11 @@ vec2 R2_samples(float n){
 }
 
 
+float HG_phase(float x, float g){
+    float gg = g * g;
+    return (gg * -0.25 + 0.25) * pow(-2.0 * (g * x) + (gg + 1.0), -1.5) / 3.14;
+}
+
 
 void main() {
 /* RENDERTARGETS:4 */
@@ -266,21 +271,21 @@ float mixhistory = 0.06;
 		}
 	#endif
 
-	#if defined FLASHLIGHT && defined FLASHLIGHT_BOUNCED_INDIRECT
-		// sample center pixel of albedo color, and interpolate it overtime.
-		if (gl_FragCoord.x > 15 && gl_FragCoord.x < 16 && gl_FragCoord.y > 2 && gl_FragCoord.y < 3){
+	// #if defined FLASHLIGHT && defined FLASHLIGHT_BOUNCED_INDIRECT
+	// 	// sample center pixel of albedo color, and interpolate it overtime.
+	// 	if (gl_FragCoord.x > 15 && gl_FragCoord.x < 16 && gl_FragCoord.y > 2 && gl_FragCoord.y < 3){
 			
-			mixhistory = 0.01;
+	// 		mixhistory = 0.01;
 
-			vec3 data = texelFetch2D(colortex1, ivec2(0.5/texelSize), 0).rgb;
-			vec3 decodeAlbedo = vec3(decodeVec2(data.x).x,decodeVec2(data.y).x, decodeVec2(data.z).x);
-			vec3 albedo = toLinear(decodeAlbedo);
+	// 		vec3 data = texelFetch(colortex1, ivec2(0.5/texelSize), 0).rgb;
+	// 		vec3 decodeAlbedo = vec3(decodeVec2(data.x).x,decodeVec2(data.y).x, decodeVec2(data.z).x);
+	// 		vec3 albedo = toLinear(decodeAlbedo);
 			
-			albedo = normalize(albedo + 1e-7) * (dot(albedo,vec3(0.21, 0.72, 0.07))*0.5+0.5);
+	// 		albedo = normalize(albedo + 1e-7) * (dot(albedo,vec3(0.21, 0.72, 0.07))*0.5+0.5);
 			
-			gl_FragData[0] = vec4(albedo,1.0);
-		}
-	#endif
+	// 		gl_FragData[0] = vec4(albedo,1.0);
+	// 	}
+	// #endif
 ////////////////////////////////
 /// --- ATMOSPHERE IMAGE --- ///
 ////////////////////////////////
@@ -327,7 +332,7 @@ if (gl_FragCoord.x > 18.+257. && gl_FragCoord.y > 1. && gl_FragCoord.x < 18+257+
 
 	WsunVec = mix(WmoonVec, WsunVec, clamp(float(sunElevation > 1e-5)*2.0-1.0 ,0,1));
 
-	vec3 sky = texelFetch2D(colortex4,ivec2(gl_FragCoord.xy)-ivec2(257,0),0).rgb/150.0;	
+	vec3 sky = texelFetch(colortex4,ivec2(gl_FragCoord.xy)-ivec2(257,0),0).rgb/150.0;	
 	sky = mix(averageSkyCol_Clouds * AmbientLightTint * 0.25, sky,  pow(clamp(viewVector.y+1.0,0.0,1.0),5.0));
 	
 	vec3 suncol = lightSourceColor;
@@ -335,10 +340,14 @@ if (gl_FragCoord.x > 18.+257. && gl_FragCoord.y > 1. && gl_FragCoord.x < 18+257+
 	#ifdef ambientLight_only
 		suncol = vec3(0.0);
 	#endif
+	// the idea is to interpolate between 4 HG function calls with different G parameters
+	float SdotV = dot(WsunVec, normalize(mat3(gbufferModelViewInverse) * viewPos + gbufferModelViewInverse[3].xyz));
+	float backScatterPhase = HG_phase(-SdotV, 0.25) * 2.0;
+	vec4 phaseLevels = vec4(HG_phase(SdotV, 0.80), HG_phase(SdotV, 0.55), HG_phase(SdotV, 0.35), HG_phase(SdotV, 0.10));
 
 	float cloudPlaneDistance = 0.0;
-	vec4 volumetricClouds = GetVolumetricClouds(viewPos, vec2(noise, 1.0-noise), WsunVec, suncol*2.5, skyGroundCol/30.0, cloudPlaneDistance);
-	vec4 volumetricFog = GetVolumetricFog(viewPos,vec2(noise, 1.0-noise),  WsunVec,    suncol*2.5, skyGroundCol/30.0, averageSkyCol_Clouds*5.0, cloudPlaneDistance);
+	vec4 volumetricClouds = GetVolumetricClouds(viewPos, vec2(noise, 1.0-noise), WsunVec, suncol*2.5, skyGroundCol/30.0, cloudPlaneDistance, phaseLevels, backScatterPhase);
+	vec4 volumetricFog = GetVolumetricFog(viewPos,vec2(noise, 1.0-noise),  WsunVec,    suncol*2.5, skyGroundCol/30.0, averageSkyCol_Clouds*5.0, cloudPlaneDistance, phaseLevels, backScatterPhase);
 
 	sky = sky * volumetricClouds.a + volumetricClouds.rgb / 5.0;
 	sky = sky * volumetricFog.a + volumetricFog.rgb / 5.0;
@@ -396,7 +405,7 @@ if (gl_FragCoord.x > 18.+257. && gl_FragCoord.y > 1. && gl_FragCoord.x < 18+257+
 	float flash = 0.0;
 	float maxWaitTime = 5;
 
-	float Timer = texelFetch2D(colortex4, ivec2(3,1), 0).x/150.0;
+	float Timer = texelFetch(colortex4, ivec2(3,1), 0).x/150.0;
 	Timer -= frameTime;
 
 	if(Timer <= 0.0){
@@ -425,7 +434,7 @@ if (gl_FragCoord.x > 18.+257. && gl_FragCoord.y > 1. && gl_FragCoord.x < 18+257+
 	if (gl_FragCoord.x > pixelPos2.x && gl_FragCoord.x < pixelPos2.x + 1 && gl_FragCoord.y > pixelPos2.y && gl_FragCoord.y < pixelPos2.y + 1){
 		mixhistory = clamp(500.0 * frameTime,0.0,1.0);
 
-		vec3 LastPos = (texelFetch2D(colortex4,ivec2(2,1),0).xyz/150.0) * 2.0 - 1.0;
+		vec3 LastPos = (texelFetch(colortex4,ivec2(2,1),0).xyz/150.0) * 2.0 - 1.0;
 		
 		LastPos += (hash31(frameCounter / 50) * 2.0 - 1.0);
 		LastPos = LastPos * 0.5 + 0.5;
@@ -438,9 +447,10 @@ if (gl_FragCoord.x > 18.+257. && gl_FragCoord.y > 1. && gl_FragCoord.x < 18+257+
 	}
 
 #endif
+// 
 
 //Temporally accumulate sky and light values
-vec3 frameHistory = texelFetch2D(colortex4,ivec2(gl_FragCoord.xy),0).rgb;
+vec3 frameHistory = texelFetch(colortex4,ivec2(gl_FragCoord.xy),0).rgb;
 vec3 currentFrame = gl_FragData[0].rgb*150.;
 
 
