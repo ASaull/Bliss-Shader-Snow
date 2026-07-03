@@ -61,7 +61,7 @@ uniform int isEyeInWater;
 
 uniform float dayChangeSmooth;
 uniform bool worldTimeChangeCheck;
-
+uniform bool windowResizeCheck;
 uniform int hideGUI;
 uniform float near;
 
@@ -203,12 +203,28 @@ float HG_phase(float x, float g){
     return (gg * -0.25 + 0.25) * pow(-2.0 * (g * x) + (gg + 1.0), -1.5) / 3.14;
 }
 
+vec3 doPixelTimer(in vec3 targetValue, in vec3 prevFrameValue){
+	// do not transition if the shader has just loaded or if the window resized.
+	if(frameCounter < 2 || windowResizeCheck) return targetValue;
+	
+	// if the value is below the target value, add time. if the value is above the target value, subtract time.
+	// this polarity variable determines what direction on the numberline to go.
+	vec3 polarity = floor(clamp((targetValue - prevFrameValue)*65000.0,-1.0,1.0));
+
+	// values that are extremely small interpolate *too fast* with a constant rate. 
+	// so scale the rate to be slower when the target value is very small.
+	prevFrameValue += polarity * (frameTime/(15.0 * (1.0/clamp(targetValue,0.1,1.0)))) * (float(SCENE_CONTROLLER_TRANSITION_RATE)/100.0f);
+
+	return prevFrameValue;
+}
 
 void main() {
 /* RENDERTARGETS:4 */
 
 gl_FragData[0] = vec4(0.0);
 
+//Temporally accumulate sky and light values
+vec3 frameHistory = texelFetch(colortex4,ivec2(gl_FragCoord.xy),0).rgb;
 float mixhistory = 0.06;
 
 
@@ -220,9 +236,15 @@ float mixhistory = 0.06;
 
 	// the idea is to store the 8 values, coverage + density of 3 cloud layers and 2 fog density values.
 	if (gl_FragCoord.x > 1 && gl_FragCoord.x < 4 && gl_FragCoord.y > 1 && gl_FragCoord.y < 4){
-		mixhistory = 10.0 * frameTime;
-
-		gl_FragData[0].rgb = writeSceneControllerParameters(gl_FragCoord.xy, parameters.smallCumulus, parameters.largeCumulus, parameters.altostratus, parameters.fog, parameters.localFog, parameters.localFogColor);
+		mixhistory = 1.0; // doing custom interpolation on these pixels. turn blending off
+		
+		vec3 targetParameterValues = writeSceneControllerParameters(gl_FragCoord.xy, parameters.smallCumulus, parameters.largeCumulus, parameters.altostratus, parameters.fog, parameters.localFog, parameters.localFogColor);
+		
+		#if SCENE_CONTROLLER_TRANSITION_RATE > 1000
+			gl_FragData[0].rgb = targetParameterValues;
+		#elif SCENE_CONTROLLER_TRANSITION_RATE <= 1000
+			gl_FragData[0].rgb = doPixelTimer(targetParameterValues, frameHistory/150.0);
+		#endif
 	}
 
 	///////////////////////////////
@@ -447,14 +469,10 @@ if (gl_FragCoord.x > 18.+257. && gl_FragCoord.y > 1. && gl_FragCoord.x < 18+257+
 	}
 
 #endif
-// 
 
-//Temporally accumulate sky and light values
-vec3 frameHistory = texelFetch(colortex4,ivec2(gl_FragCoord.xy),0).rgb;
-vec3 currentFrame = gl_FragData[0].rgb*150.;
+vec3 currentFrame = gl_FragData[0].rgb*150.0;
 
-
-gl_FragData[0].rgb = clamp(mix(frameHistory, currentFrame, clamp(mixhistory,0.0,1.0)),0.0,65000.);
+gl_FragData[0].rgb = clamp(mix(frameHistory, currentFrame, clamp(mixhistory,0.0,1.0)),0.0,65000.0);
 
 //Exposure values
 if (gl_FragCoord.x > 10. && gl_FragCoord.x < 11.  && gl_FragCoord.y > 19.+18. && gl_FragCoord.y < 19.+18.+1 )

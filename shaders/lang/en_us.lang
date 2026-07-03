@@ -287,20 +287,30 @@ screen.Resource_Pack_Support = Materials / Resource Pack Support
             value.EMISSIVE_TYPE.3 = LabPBR Emission only
 
     screen.Subsurface_Scattering = Sub-Surface Scattering
-        option.LabSSS_Curve = LabPBR SSS Curve
-        option.MISC_BLOCK_SSS = SSS for random blocks
-        option.MOB_SSS = SSS for mobs
-        option.Ambient_SSS = SSS from the sky
-        option.ambientsss_brightness = Sky SSS Brightness
-        option.SSS_TYPE = Mode
+        option.SSS_TYPE = Sub-Surface Scattering Mode
             value.SSS_TYPE.0 = §cOFF§r
             value.SSS_TYPE.1 = Built-In only
             value.SSS_TYPE.2 = Built-In + LabPBR SSS
             value.SSS_TYPE.3 = LabPBR SSS only
+        option.LabSSS_Curve = LabPBR SSS Curve
+        option.MISC_BLOCK_SSS = SSS for random blocks
+        option.MOB_SSS = SSS for mobs
+        option.DIRECT_SSS_DENSITY_MULT = SSS Density Multiplier
+            suffix.DIRECT_SSS_DENSITY_MULT =x
+        option.Ambient_SSS = Indirect Light SSS
+        option.ambientsss_brightness = Indirect Light SSS Brightness
+            suffix.ambientsss_brightness =x
+        option.INDIRECT_SSS_ABSORBANCE_AMOUNT  = Indirect Light SSS Saturation Boost
+            suffix.INDIRECT_SSS_ABSORBANCE_AMOUNT =%
+            value.INDIRECT_SSS_ABSORBANCE_AMOUNT.0 = §cOFF
+        option.DIRECT_SSS_BRIGHTNESS = Direct Light SSS Brightness
+            suffix.DIRECT_SSS_BRIGHTNESS =x
+        option.DIRECT_SSS_ABSORBANCE_AMOUNT = Direct Light SSS Saturation Boost
+            suffix.DIRECT_SSS_ABSORBANCE_AMOUNT =%
+            value.DIRECT_SSS_ABSORBANCE_AMOUNT.0 = §cOFF
+        option.DISTANT_SSS = Screen-Space Shadow SSS
+        option.SCREENSPACE_DIRECT_SSS_BLENDING = Screen-Space Shadow SSS Blending §bⓘ Only within the shadowMap
 
-        option.sss_density_multiplier = SSS Density Multiplier
-        option.sss_absorbance_multiplier = SSS Saturation Multiplier
-        option.SCREENSPACE_DIRECT_SSS_BLENDING = Screen-Space Direct SSS Blending
 
     screen.POM = Parallax Occlusion Mapping / POM
         option.POM = Parallax Occlusion Mapping / POM
@@ -358,11 +368,16 @@ screen.Resource_Pack_Support = Materials / Resource Pack Support
 
     screen.Subsurface_Scattering.comment = §bⓘ What is this?§r Sub-surface scattering is what happens when you put a bright light on your hand, and it starts to glow. The sun actually does the same thing to plants, cloth, skin, and other things.
     option.SSS_TYPE.comment = Configure how the sub-surface scattering is applied to the world.  §bBuilt-In:§r The shader decides what gets it. §bLabPBR SSS:§r The resourcepack decides what gets it. §a⚠ PERFORMANCE COST:§r very low
-    option.MOB_SSS.comment = Toggle sub-surface scattering for mobs. players are included. §a⚠ PERFORMANCE COST:§r very low
-    option.MISC_BLOCK_SSS.comment = Toggle sub-surface scattering for random blocks it may not fit. this is for grass and sand mostly. §a⚠ PERFORMANCE COST:§r very low
+    option.MOB_SSS.comment = §bⓘ What is this?§r Toggle sub-surface scattering for mobs. players are included. §a⚠ PERFORMANCE COST:§r very low
+    option.MISC_BLOCK_SSS.comment = §bⓘ What is this?§r Toggle sub-surface scattering for random blocks it may not fit. this is for grass and sand mostly. §a⚠ PERFORMANCE COST:§r very low
     option.Ambient_SSS.comment = §bⓘ What is this?§r sub-surface scattering from light coming from the sky, instead of the sun. §a⚠ PERFORMANCE COST:§r very low to medium; if SSAO is enabled this costs very little, but costs more if SSAO is off
-    option.ambientsss_brightness.comment = Configure the brightness of sub-surface scattering from the sky's light
-
+    option.ambientsss_brightness.comment = §bⓘ What is this?§r Configure the brightness of sub-surface scattering from the sky's light
+    option.DIRECT_SSS_DENSITY_MULT.comment = §bⓘ What is this?§r Configure how deep the light can penetrate the blocks when scattering through them. §a⚠ PERFORMANCE COST:§r none
+    option.SCREENSPACE_DIRECT_SSS_BLENDING.comment = §bⓘ What is this?§r Configure how much the screen-space shadows can blend with the shadowMap within the SSS. §a⚠ PERFORMANCE COST:§r none
+    option.DIRECT_SSS_ABSORBANCE_AMOUNT.comment = §bⓘ What is this?§r Configure how colorful the lighting gets as the light penetrates deeper into the block. §a⚠ PERFORMANCE COST:§r none
+    option.INDIRECT_SSS_ABSORBANCE_AMOUNT.comment = §bⓘ What is this?§r Configure how colorful the lighting gets as the light penetrates deeper into the block. §a⚠ PERFORMANCE COST:§r none
+    option.DIRECT_SSS_BRIGHTNESS.comment = §bⓘ What is this?§r Configure the brightness of sub-surface scattering from the sun/moon's light.
+    
     screen.Emissives.comment = §bⓘ What is this?§r Emissiveness is just how much light something is letting off, or how much something is glowing.
     option.Emissive_Brightness.comment = Configure how bright the texture emission should be.
     option.EMISSIVE_TYPE.comment = Configure how texture emission is applied to the world.  §bBuilt-In:§r The shader decides what gets it. §bLabPBR SSS:§r The resourcepack decides what gets it. §a⚠ PERFORMANCE COST:§r very low
@@ -607,12 +622,14 @@ screen.Camera_Settings = Camera Settings
     option.CINEMATIC_BORDER_COVERAGE_HORIZONTAL.comment = §bⓘ What is this?§r This is the black bars on the left and right of the screen you might have seen in a movie. §a⚠ PERFORMANCE COST:§r basically nothing
 
  ###################################################### ↓↓↓ THIS SUBMENU'S LABELS
-screen.Fog = Fog Settings
-    
+screen.VOLUMETRICS = Volumetrics
+
     option.VL_RENDERING_RESOLUTION_SCALE = Volumetrics Render Scale
     suffix.VL_RENDERING_RESOLUTION_SCALE = x
     option.VL_SAMPLES = Fog Samples
     option.BLOOMY_FOG = Bloomy Fog Multiplier
+    option.RAIN_SNOW_BLOOMY_FOG = Bloomy Rain/Snow Multiplier
+    option.UNDERWATER_BLOOMY_FOG = Underwater Bloomy fog Multiplier
     option.Haze_amount = Atmospheric Haze Density
     option.RainFog_amount = Rain Fog Multiplier
     option.BorderFog = Chunk Border Fog
@@ -625,10 +642,10 @@ screen.Fog = Fog Settings
         option.Noon_Uniform_Fog = Noon Fog Density
         option.Evening_Uniform_Fog = Evening Fog Density
         option.Night_Uniform_Fog = Night Fog Density
-        option.Morning_Cloudy_Fog = Morning Cloudy Fog Density
-        option.Noon_Cloudy_Fog = Noon Cloudy Fog Density
-        option.Evening_Cloudy_Fog = Evening Cloudy Fog Density
-        option.Night_Cloudy_Fog = Night Cloudy Fog Density
+        option.Morning_Cloudy_Fog = Morning clumpy Fog Density
+        option.Noon_Cloudy_Fog = Noon clumpy Fog Density
+        option.Evening_Cloudy_Fog = Evening clumpy Fog Density
+        option.Night_Cloudy_Fog = Night clumpy Fog Density
 
         screen.BIOME_EFFECTS = Biome Effects
 
@@ -643,6 +660,41 @@ screen.Fog = Fog Settings
         option.END_STORM_DENSTIY = End Storm Density
         option.NETHER_PLUME_DENSITY = Nether Smoke Density
 
+    option.SMALL_CUMULUS_LABEL = Small Cumulus Layer
+    option.LARGE_CUMULUS_LABEL = Large Cumulus Layer
+    option.ALTOSTRATUS_LABEL =   Altostratus Layer
+    value.SMALL_CUMULUS_LABEL.0 = §f↓
+    value.LARGE_CUMULUS_LABEL.0 = §f↓
+    value.ALTOSTRATUS_LABEL.0 = §f↓
+
+    option.CLOUD_SHADOW_AMOUNT = Cloud Shadow Visibilty
+        value.CLOUD_SHADOW_AMOUNT.0 = §cOFF
+        suffix.CLOUD_SHADOW_AMOUNT = %
+    option.Cloud_Speed = Cloud Speed Multiplier
+    option.SCENE_CONTROLLER_TRANSITION_RATE = Preset Transition Rate
+        suffix.SCENE_CONTROLLER_TRANSITION_RATE = %
+        value.SCENE_CONTROLLER_TRANSITION_RATE.9999 = Instant Transition
+    option.CLOUD_ANIMATION_MODE = Cloud Animation Basis
+        value.CLOUD_ANIMATION_MODE.0 = World Time
+        value.CLOUD_ANIMATION_MODE.1 = Game Running Time
+
+    option.CloudLayer0 = Small Cumulus Clouds
+    option.CloudLayer1 = Large Cumulus Clouds
+    option.CloudLayer2 = Altostratus Clouds
+    screen.CloudLayer0_config = Small Cumulus Config §cTEMPORARY SUBMENU§r 
+    screen.CloudLayer1_config = Large Cumulus Config §cTEMPORARY SUBMENU§r 
+    screen.CloudLayer2_config = Altostratus Config §cTEMPORARY SUBMENU§r 
+
+    option.CloudLayer0_height   = Altitude
+    option.CloudLayer0_scale    = Scale
+    option.CloudLayer0_tallness = Tallness
+    option.CloudLayer1_height   = Altitude
+    option.CloudLayer1_scale    = Scale
+    option.CloudLayer1_tallness = Tallness
+    option.CloudLayer2_height   = Altitude
+    option.CloudLayer2_scale    = Scale
+    option.CloudLayer2_tallness = Tallness
+    
  ###################################################### ↑↑↑ THIS SUBMENU'S DESCRIPTIONS
 
     screen.Fog.comment = Configure settings related to the raymarched volumetric fog, or distance based fog.
@@ -664,37 +716,12 @@ screen.Fog = Fog Settings
     option.NETHER_PLUME_DENSITY.comment =  §bⓘ What is this?§r This is the thick, glowing smoke towers in the nether. Confingure the density of the nether smoke.
    
  ###################################################### ↓↓↓ THIS SUBMENU'S LABELS
-screen.Clouds = Cloud Settings
+screen.ATMOSPHERICS = Atmospherics
+    option.WIND_SYSTEM_MODE = Wind System
+        value.WIND_SYSTEM_MODE.-1 = §cOFF§r
+        value.WIND_SYSTEM_MODE.0 = §bⓘ ON + Exclude Foliage
+        value.WIND_SYSTEM_MODE.1 = §bⓘ ON
 
-    option.SMALL_CUMULUS_LABEL = Small Cumulus Layer
-    option.LARGE_CUMULUS_LABEL = Large Cumulus Layer
-    option.ALTOSTRATUS_LABEL =   Altostratus Layer
-    value.SMALL_CUMULUS_LABEL.0 = §f↓
-    value.LARGE_CUMULUS_LABEL.0 = §f↓
-    value.ALTOSTRATUS_LABEL.0 = §f↓
-
-    option.CLOUD_SHADOW_AMOUNT = Cloud Shadow Visibilty
-    value.CLOUD_SHADOW_AMOUNT.0 = §cOFF
-    suffix.CLOUD_SHADOW_AMOUNT = %
-    option.Cloud_Speed = Cloud Speed Multiplier
-
-    option.CloudLayer0 = Small Cumulus Clouds
-    option.CloudLayer1 = Large Cumulus Clouds
-    option.CloudLayer2 = Altostratus Clouds
-    screen.CloudLayer0_config = Small Cumulus Config §cTEMPORARY SUBMENU§r 
-    screen.CloudLayer1_config = Large Cumulus Config §cTEMPORARY SUBMENU§r 
-    screen.CloudLayer2_config = Altostratus Config §cTEMPORARY SUBMENU§r 
-
-    option.CloudLayer0_height   = Altitude
-    option.CloudLayer0_scale    = Scale
-    option.CloudLayer0_tallness = Tallness
-    option.CloudLayer1_height   = Altitude
-    option.CloudLayer1_scale    = Scale
-    option.CloudLayer1_tallness = Tallness
-    option.CloudLayer2_height   = Altitude
-    option.CloudLayer2_scale    = Scale
-    option.CloudLayer2_tallness = Tallness
-    
     screen.DAILY_WEATHER = Daily Weather Presets
     option.USE_CUSTOM_DAILY_WEATHER_PROFILE = Daily Weather Mode
         value.USE_CUSTOM_DAILY_WEATHER_PROFILE.0 = Built-In
@@ -777,6 +804,8 @@ screen.Clouds = Cloud Settings
     option.RAINY_PROFILE_1_LAYER1_DENSITY = Density
     option.RAINY_PROFILE_1_LAYER2_COVERAGE = Coverage
     option.RAINY_PROFILE_1_LAYER2_DENSITY = Density
+    option.RAINY_PROFILE_1_UNIFORM_FOG_DENSITY = Uniform Fog Density
+    option.RAINY_PROFILE_1_CLUMPY_FOG_DENSITY = Clumpy Fog Density
 
     option.RAINY_PROFILE_2_LAYER0_COVERAGE = Coverage
     option.RAINY_PROFILE_2_LAYER0_DENSITY = Density
@@ -784,6 +813,8 @@ screen.Clouds = Cloud Settings
     option.RAINY_PROFILE_2_LAYER1_DENSITY = Density
     option.RAINY_PROFILE_2_LAYER2_COVERAGE = Coverage
     option.RAINY_PROFILE_2_LAYER2_DENSITY = Density
+    option.RAINY_PROFILE_2_UNIFORM_FOG_DENSITY = Uniform Fog Density
+    option.RAINY_PROFILE_2_CLUMPY_FOG_DENSITY = Clumpy Fog Density
 
     option.RAINY_PROFILE_3_LAYER0_COVERAGE = Coverage
     option.RAINY_PROFILE_3_LAYER0_DENSITY = Density
@@ -791,6 +822,8 @@ screen.Clouds = Cloud Settings
     option.RAINY_PROFILE_3_LAYER1_DENSITY = Density
     option.RAINY_PROFILE_3_LAYER2_COVERAGE = Coverage
     option.RAINY_PROFILE_3_LAYER2_DENSITY = Density
+    option.RAINY_PROFILE_3_UNIFORM_FOG_DENSITY = Uniform Fog Density
+    option.RAINY_PROFILE_3_CLUMPY_FOG_DENSITY = Clumpy Fog Density
 
     option.RAINY_PROFILE_4_LAYER0_COVERAGE = Coverage
     option.RAINY_PROFILE_4_LAYER0_DENSITY = Density
@@ -798,6 +831,8 @@ screen.Clouds = Cloud Settings
     option.RAINY_PROFILE_4_LAYER1_DENSITY = Density
     option.RAINY_PROFILE_4_LAYER2_COVERAGE = Coverage
     option.RAINY_PROFILE_4_LAYER2_DENSITY = Density
+    option.RAINY_PROFILE_4_UNIFORM_FOG_DENSITY = Uniform Fog Density
+    option.RAINY_PROFILE_4_CLUMPY_FOG_DENSITY = Clumpy Fog Density
 
     option.RAINY_PROFILE_5_LAYER0_COVERAGE = Coverage
     option.RAINY_PROFILE_5_LAYER0_DENSITY = Density
@@ -805,6 +840,8 @@ screen.Clouds = Cloud Settings
     option.RAINY_PROFILE_5_LAYER1_DENSITY = Density
     option.RAINY_PROFILE_5_LAYER2_COVERAGE = Coverage
     option.RAINY_PROFILE_5_LAYER2_DENSITY = Density
+    option.RAINY_PROFILE_5_UNIFORM_FOG_DENSITY = Uniform Fog Density
+    option.RAINY_PROFILE_5_CLUMPY_FOG_DENSITY = Clumpy Fog Density
 
     option.RAINY_PROFILE_6_LAYER0_COVERAGE = Coverage
     option.RAINY_PROFILE_6_LAYER0_DENSITY = Density
@@ -812,6 +849,98 @@ screen.Clouds = Cloud Settings
     option.RAINY_PROFILE_6_LAYER1_DENSITY = Density
     option.RAINY_PROFILE_6_LAYER2_COVERAGE = Coverage
     option.RAINY_PROFILE_6_LAYER2_DENSITY = Density
+    option.RAINY_PROFILE_6_UNIFORM_FOG_DENSITY = Uniform Fog Density
+    option.RAINY_PROFILE_6_CLUMPY_FOG_DENSITY = Clumpy Fog Density
+
+    option.USE_CUSTOM_HOT_BIOME_RAIN_PROFILE = Hot Biome Rainy Weather Mode
+
+        value.USE_CUSTOM_HOT_BIOME_RAIN_PROFILE.-1 = §cOFF
+        value.USE_CUSTOM_HOT_BIOME_RAIN_PROFILE.0 = Built-In
+        value.USE_CUSTOM_HOT_BIOME_RAIN_PROFILE.1 = §f↓§r Only Use Preset 1 §f↓§r
+        value.USE_CUSTOM_HOT_BIOME_RAIN_PROFILE.2 = §f↓§r Use Presets 1 to 2 §f↓§r
+        value.USE_CUSTOM_HOT_BIOME_RAIN_PROFILE.3 = §f↓§r Use Presets 1 to 3 §f↓§r
+        screen.HOT_BIOME_RAINY_WEATHER_PROFILE_1 = Preset 1
+        screen.HOT_BIOME_RAINY_WEATHER_PROFILE_2 = Preset 2
+        screen.HOT_BIOME_RAINY_WEATHER_PROFILE_3 = Preset 3
+    
+    option.USE_CUSTOM_COLD_BIOME_RAIN_PROFILE = Cold Biome Rainy Weather Mode
+
+        value.USE_CUSTOM_COLD_BIOME_RAIN_PROFILE.-1 = §cOFF
+        value.USE_CUSTOM_COLD_BIOME_RAIN_PROFILE.0 = Built-In
+        value.USE_CUSTOM_COLD_BIOME_RAIN_PROFILE.1 = §f↓§r Only Use Preset 1 §f↓§r
+        value.USE_CUSTOM_COLD_BIOME_RAIN_PROFILE.2 = §f↓§r Use Presets 1 to 2 §f↓§r
+        value.USE_CUSTOM_COLD_BIOME_RAIN_PROFILE.3 = §f↓§r Use Presets 1 to 3 §f↓§r
+        screen.COLD_BIOME_RAINY_WEATHER_PROFILE_1 = Preset 1
+        screen.COLD_BIOME_RAINY_WEATHER_PROFILE_2 = Preset 2
+        screen.COLD_BIOME_RAINY_WEATHER_PROFILE_3 = Preset 3
+
+        option.HOT_BIOME_RAINY_PROFILE_1_UNIFORM_FOG_DENSITY = Uniform Fog Density
+        option.HOT_BIOME_RAINY_PROFILE_1_CLUMPY_FOG_DENSITY = Clumpy Fog Density
+        option.HOT_BIOME_RAINY_PROFILE_1_FOG_COLOR_R = Fog Color Red
+        option.HOT_BIOME_RAINY_PROFILE_1_FOG_COLOR_G = Fog Color Green
+        option.HOT_BIOME_RAINY_PROFILE_1_FOG_COLOR_B = Fog Color Blue
+        option.HOT_BIOME_RAINY_PROFILE_2_UNIFORM_FOG_DENSITY = Uniform Fog Density
+        option.HOT_BIOME_RAINY_PROFILE_2_CLUMPY_FOG_DENSITY = Clumpy Fog Density
+        option.HOT_BIOME_RAINY_PROFILE_2_FOG_COLOR_R = Fog Color Red
+        option.HOT_BIOME_RAINY_PROFILE_2_FOG_COLOR_G = Fog Color Green
+        option.HOT_BIOME_RAINY_PROFILE_2_FOG_COLOR_B = Fog Color Blue
+        option.HOT_BIOME_RAINY_PROFILE_3_UNIFORM_FOG_DENSITY = Uniform Fog Density
+        option.HOT_BIOME_RAINY_PROFILE_3_CLUMPY_FOG_DENSITY = Clumpy Fog Density
+        option.HOT_BIOME_RAINY_PROFILE_3_FOG_COLOR_R = Fog Color Red
+        option.HOT_BIOME_RAINY_PROFILE_3_FOG_COLOR_G = Fog Color Green
+        option.HOT_BIOME_RAINY_PROFILE_3_FOG_COLOR_B = Fog Color Blue
+
+        option.COLD_BIOME_RAINY_PROFILE_1_UNIFORM_FOG_DENSITY = Uniform Fog Density
+        option.COLD_BIOME_RAINY_PROFILE_1_CLUMPY_FOG_DENSITY = Clumpy Fog Density
+        option.COLD_BIOME_RAINY_PROFILE_1_FOG_COLOR_R = Fog Color Red
+        option.COLD_BIOME_RAINY_PROFILE_1_FOG_COLOR_G = Fog Color Green
+        option.COLD_BIOME_RAINY_PROFILE_1_FOG_COLOR_B = Fog Color Blue
+        option.COLD_BIOME_RAINY_PROFILE_2_UNIFORM_FOG_DENSITY = Uniform Fog Density
+        option.COLD_BIOME_RAINY_PROFILE_2_CLUMPY_FOG_DENSITY = Clumpy Fog Density
+        option.COLD_BIOME_RAINY_PROFILE_2_FOG_COLOR_R = Fog Color Red
+        option.COLD_BIOME_RAINY_PROFILE_2_FOG_COLOR_G = Fog Color Green
+        option.COLD_BIOME_RAINY_PROFILE_2_FOG_COLOR_B = Fog Color Blue
+        option.COLD_BIOME_RAINY_PROFILE_3_UNIFORM_FOG_DENSITY = Uniform Fog Density
+        option.COLD_BIOME_RAINY_PROFILE_3_CLUMPY_FOG_DENSITY = Clumpy Fog Density
+        option.COLD_BIOME_RAINY_PROFILE_3_FOG_COLOR_R = Fog Color Red
+        option.COLD_BIOME_RAINY_PROFILE_3_FOG_COLOR_G = Fog Color Green
+        option.COLD_BIOME_RAINY_PROFILE_3_FOG_COLOR_B = Fog Color Blue
+
+        option.USE_CUSTOM_SWAMP_CATEGORY_PROFILE = Swamp Biome Mode
+        value.USE_CUSTOM_SWAMP_CATEGORY_PROFILE.-1 = §cOFF
+        value.USE_CUSTOM_SWAMP_CATEGORY_PROFILE.0 = Built-In
+        value.USE_CUSTOM_SWAMP_CATEGORY_PROFILE.1 = §f↓§r Use Custom Preset §f↓§r
+        screen.CUSTOM_SWAMP_CATEGORY_PROFILE_1 = Custom Preset
+
+        option.USE_CUSTOM_JUNGLE_CATEGORY_PROFILE = Jungle Biome Mode
+        value.USE_CUSTOM_JUNGLE_CATEGORY_PROFILE.-1 = §cOFF
+        value.USE_CUSTOM_JUNGLE_CATEGORY_PROFILE.0 = Built-In
+        value.USE_CUSTOM_JUNGLE_CATEGORY_PROFILE.1 = §f↓§r Use Custom Preset §f↓§r
+        screen.CUSTOM_JUNGLE_CATEGORY_PROFILE_1 = Custom Preset
+
+        option.CUSTOM_SWAMP_PROFILE_UNIFORM_FOG_DENSITY = Uniform Fog Density
+        option.CUSTOM_SWAMP_PROFILE_CLUMPY_FOG_DENSITY = Clumpy Fog Density
+        option.CUSTOM_SWAMP_PROFILE_FOG_COLOR_R = Fog Color Red
+        option.CUSTOM_SWAMP_PROFILE_FOG_COLOR_G = Fog Color Green
+        option.CUSTOM_SWAMP_PROFILE_FOG_COLOR_B = Fog Color Blue
+
+        option.CUSTOM_JUNGLE_PROFILE_UNIFORM_FOG_DENSITY = Uniform Fog Density
+        option.CUSTOM_JUNGLE_PROFILE_CLUMPY_FOG_DENSITY  = Clumpy Fog Density
+        option.CUSTOM_JUNGLE_PROFILE_FOG_COLOR_R = Fog Color Red
+        option.CUSTOM_JUNGLE_PROFILE_FOG_COLOR_G = Fog Color Green
+        option.CUSTOM_JUNGLE_PROFILE_FOG_COLOR_B = Fog Color Blue
+
+        option.USE_CUSTOM_PALE_GARDEN_PROFILE = Pale Garden Biome Mode
+        value.USE_CUSTOM_PALE_GARDEN_PROFILE.-1 = §cOFF
+        value.USE_CUSTOM_PALE_GARDEN_PROFILE.0 = Built-In
+        value.USE_CUSTOM_PALE_GARDEN_PROFILE.1 = §f↓§r Use Custom Preset §f↓§r
+        screen.CUSTOM_PALE_GARDEN_PROFILE_1 = Custom Preset
+
+        option.CUSTOM_PALE_GARDEN_PROFILE_UNIFORM_FOG_DENSITY = Uniform Fog Density
+        option.CUSTOM_PALE_GARDEN_PROFILE_CLUMPY_FOG_DENSITY = Clumpy Fog Density
+        option.CUSTOM_PALE_GARDEN_PROFILE_FOG_COLOR_R = Fog Color Red
+        option.CUSTOM_PALE_GARDEN_PROFILE_FOG_COLOR_G = Fog Color Green
+        option.CUSTOM_PALE_GARDEN_PROFILE_FOG_COLOR_B = Fog Color Blue
 
  ###################################################### ↑↑↑ THIS SUBMENU'S DESCRIPTIONS
 
@@ -836,91 +965,6 @@ screen.Clouds = Cloud Settings
     option.CloudLayer2_coverage.comment = Configure how much of the sky these clouds cover.
     option.CloudLayer2_density.comment  = Configure how dense, or thick these clouds are.
     option.CloudLayer2_height.comment   = Configure the height at which these clouds fly at. §cTHESE CANNOT BE LOWER THAN THE LARGE CLOUDS§r
-
-
- ###################################################### ↓↓↓ THIS SUBMENU'S LABELS
-option.USE_CUSTOM_HOT_BIOME_RAIN_PROFILE = Hot Biome Rainy Weather Mode
-
-    value.USE_CUSTOM_HOT_BIOME_RAIN_PROFILE.-1 = §cOFF
-    value.USE_CUSTOM_HOT_BIOME_RAIN_PROFILE.0 = Built-In
-    value.USE_CUSTOM_HOT_BIOME_RAIN_PROFILE.1 = §f↓§r Only Use Preset 1 §f↓§r
-    value.USE_CUSTOM_HOT_BIOME_RAIN_PROFILE.2 = §f↓§r Use Presets 1 to 2 §f↓§r
-    value.USE_CUSTOM_HOT_BIOME_RAIN_PROFILE.3 = §f↓§r Use Presets 1 to 3 §f↓§r
-    screen.HOT_BIOME_RAINY_WEATHER_PROFILE_1 = Preset 1
-    screen.HOT_BIOME_RAINY_WEATHER_PROFILE_2 = Preset 2
-    screen.HOT_BIOME_RAINY_WEATHER_PROFILE_3 = Preset 3
-
- ###################################################### ↑↑↑ THIS SUBMENU'S DESCRIPTIONS
-
- ###################################################### ↓↓↓ THIS SUBMENU'S LABELS
-option.USE_CUSTOM_COLD_BIOME_RAIN_PROFILE = Cold Biome Rainy Weather Mode
-
-    value.USE_CUSTOM_COLD_BIOME_RAIN_PROFILE.-1 = §cOFF
-    value.USE_CUSTOM_COLD_BIOME_RAIN_PROFILE.0 = Built-In
-    value.USE_CUSTOM_COLD_BIOME_RAIN_PROFILE.1 = §f↓§r Only Use Preset 1 §f↓§r
-    value.USE_CUSTOM_COLD_BIOME_RAIN_PROFILE.2 = §f↓§r Use Presets 1 to 2 §f↓§r
-    value.USE_CUSTOM_COLD_BIOME_RAIN_PROFILE.3 = §f↓§r Use Presets 1 to 3 §f↓§r
-    screen.COLD_BIOME_RAINY_WEATHER_PROFILE_1 = Preset 1
-    screen.COLD_BIOME_RAINY_WEATHER_PROFILE_2 = Preset 2
-    screen.COLD_BIOME_RAINY_WEATHER_PROFILE_3 = Preset 3
-
-    option.HOT_BIOME_RAINY_PROFILE_1_UNIFORM_FOG_DENSITY = Uniform Fog Density
-    option.HOT_BIOME_RAINY_PROFILE_1_CLUMPY_FOG_DENSITY = Clumpy Fog Density
-    option.HOT_BIOME_RAINY_PROFILE_1_FOG_COLOR_R = Fog Color Red
-    option.HOT_BIOME_RAINY_PROFILE_1_FOG_COLOR_G = Fog Color Green
-    option.HOT_BIOME_RAINY_PROFILE_1_FOG_COLOR_B = Fog Color Blue
-    option.HOT_BIOME_RAINY_PROFILE_2_UNIFORM_FOG_DENSITY = Uniform Fog Density
-    option.HOT_BIOME_RAINY_PROFILE_2_CLUMPY_FOG_DENSITY = Clumpy Fog Density
-    option.HOT_BIOME_RAINY_PROFILE_2_FOG_COLOR_R = Fog Color Red
-    option.HOT_BIOME_RAINY_PROFILE_2_FOG_COLOR_G = Fog Color Green
-    option.HOT_BIOME_RAINY_PROFILE_2_FOG_COLOR_B = Fog Color Blue
-    option.HOT_BIOME_RAINY_PROFILE_3_UNIFORM_FOG_DENSITY = Uniform Fog Density
-    option.HOT_BIOME_RAINY_PROFILE_3_CLUMPY_FOG_DENSITY = Clumpy Fog Density
-    option.HOT_BIOME_RAINY_PROFILE_3_FOG_COLOR_R = Fog Color Red
-    option.HOT_BIOME_RAINY_PROFILE_3_FOG_COLOR_G = Fog Color Green
-    option.HOT_BIOME_RAINY_PROFILE_3_FOG_COLOR_B = Fog Color Blue
-
-    option.COLD_BIOME_RAINY_PROFILE_1_UNIFORM_FOG_DENSITY = Uniform Fog Density
-    option.COLD_BIOME_RAINY_PROFILE_1_CLUMPY_FOG_DENSITY = Clumpy Fog Density
-    option.COLD_BIOME_RAINY_PROFILE_1_FOG_COLOR_R = Fog Color Red
-    option.COLD_BIOME_RAINY_PROFILE_1_FOG_COLOR_G = Fog Color Green
-    option.COLD_BIOME_RAINY_PROFILE_1_FOG_COLOR_B = Fog Color Blue
-    option.COLD_BIOME_RAINY_PROFILE_2_UNIFORM_FOG_DENSITY = Uniform Fog Density
-    option.COLD_BIOME_RAINY_PROFILE_2_CLUMPY_FOG_DENSITY = Clumpy Fog Density
-    option.COLD_BIOME_RAINY_PROFILE_2_FOG_COLOR_R = Fog Color Red
-    option.COLD_BIOME_RAINY_PROFILE_2_FOG_COLOR_G = Fog Color Green
-    option.COLD_BIOME_RAINY_PROFILE_2_FOG_COLOR_B = Fog Color Blue
-    option.COLD_BIOME_RAINY_PROFILE_3_UNIFORM_FOG_DENSITY = Uniform Fog Density
-    option.COLD_BIOME_RAINY_PROFILE_3_CLUMPY_FOG_DENSITY = Clumpy Fog Density
-    option.COLD_BIOME_RAINY_PROFILE_3_FOG_COLOR_R = Fog Color Red
-    option.COLD_BIOME_RAINY_PROFILE_3_FOG_COLOR_G = Fog Color Green
-    option.COLD_BIOME_RAINY_PROFILE_3_FOG_COLOR_B = Fog Color Blue
-
-    option.USE_CUSTOM_SWAMP_CATEGORY_PROFILE = Swamp Biome Mode
-    value.USE_CUSTOM_SWAMP_CATEGORY_PROFILE.-1 = §cOFF
-    value.USE_CUSTOM_SWAMP_CATEGORY_PROFILE.0 = Built-In
-    value.USE_CUSTOM_SWAMP_CATEGORY_PROFILE.1 = §f↓§r Use Custom Preset §f↓§r
-    screen.CUSTOM_SWAMP_CATEGORY_PROFILE_1 = Custom Preset
-
-    option.USE_CUSTOM_JUNGLE_CATEGORY_PROFILE = Jungle Biome Mode
-    value.USE_CUSTOM_JUNGLE_CATEGORY_PROFILE.-1 = §cOFF
-    value.USE_CUSTOM_JUNGLE_CATEGORY_PROFILE.0 = Built-In
-    value.USE_CUSTOM_JUNGLE_CATEGORY_PROFILE.1 = §f↓§r Use Custom Preset §f↓§r
-    screen.CUSTOM_JUNGLE_CATEGORY_PROFILE_1 = Custom Preset
-
-    option.CUSTOM_SWAMP_PROFILE_1_UNIFORM_FOG_DENSITY = Uniform Fog Density
-    option.CUSTOM_SWAMP_PROFILE_1_CLUMPY_FOG_DENSITY = Clumpy Fog Density
-    option.CUSTOM_SWAMP_PROFILE_1_FOG_COLOR_R = Fog Color Red
-    option.CUSTOM_SWAMP_PROFILE_1_FOG_COLOR_G = Fog Color Green
-    option.CUSTOM_SWAMP_PROFILE_1_FOG_COLOR_B = Fog Color Blue
-
-    option.CUSTOM_JUNGLE_PROFILE_1_UNIFORM_FOG_DENSITY = Uniform Fog Density
-    option.CUSTOM_JUNGLE_PROFILE_1_CLUMPY_FOG_DENSITY  = Clumpy Fog Density
-    option.CUSTOM_JUNGLE_PROFILE_1_FOG_COLOR_R = Fog Color Red
-    option.CUSTOM_JUNGLE_PROFILE_1_FOG_COLOR_G = Fog Color Green
-    option.CUSTOM_JUNGLE_PROFILE_1_FOG_COLOR_B = Fog Color Blue
-
- ###################################################### ↑↑↑ THIS SUBMENU'S DESCRIPTIONS
 
  ###################################################### ↓↓↓ THIS SUBMENU'S LABELS
 screen.Climate = Climate Settings
@@ -968,7 +1012,7 @@ screen.Climate = Climate Settings
     screen.SWAMP = Swamp
         option.SWAMP_ENV = Swamp Environment
         option.SWAMP_UNIFORM_DENSITY = Uniform Fog Density
-        option.SWAMP_CLOUDY_DENSITY = Cloudy Fog Density
+        option.SWAMP_CLOUDY_DENSITY = Clumpy Fog Density
         option.SWAMP_R = Red Amount
         option.SWAMP_G = Green Amount
         option.SWAMP_B = Blue Amount
@@ -976,7 +1020,7 @@ screen.Climate = Climate Settings
     screen.JUNGLE = Jungle
         option.JUNGLE_ENV = Jungle Environment
         option.JUNGLE_UNIFORM_DENSITY = Uniform Fog Density
-        option.JUNGLE_CLOUDY_DENSITY = Cloudy Fog Density
+        option.JUNGLE_CLOUDY_DENSITY = Clumpy Fog Density
         option.JUNGLE_R = Red Amount
         option.JUNGLE_G = Green Amount
         option.JUNGLE_B = Blue Amount
@@ -984,7 +1028,7 @@ screen.Climate = Climate Settings
     screen.DARKFOREST = Dark Forest
         option.DARKFOREST_ENV = Dark Forest Environment
         option.DARKFOREST_UNIFORM_DENSITY = Uniform Fog Density
-        option.DARKFOREST_CLOUDY_DENSITY = Cloudy Fog Density
+        option.DARKFOREST_CLOUDY_DENSITY = Clumpy Fog Density
         option.DARKFOREST_R = Red Amount
         option.DARKFOREST_G = Green Amount
         option.DARKFOREST_B = Blue Amount
