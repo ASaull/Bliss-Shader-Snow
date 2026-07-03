@@ -6,7 +6,9 @@ float lpvCurve(float values) {
     #ifdef VANILLA_LIGHTMAP_MASK
         return sqrt(values);
     #else
-        return pow(1.0 - sqrt(1.0-values), 3.0);
+        float brightCentral = pow(1.0 - sqrt(1.0-values), 3.0);
+        float constantOuter = mix(0.0, 0.2, pow(1.0 - sqrt(1.0-values), 1.3)) * 0.2;
+        return max(brightCentral, constantOuter);
     #endif
 }
 
