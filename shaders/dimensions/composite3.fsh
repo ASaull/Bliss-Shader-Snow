@@ -429,6 +429,26 @@ float getBorderFogDensity(float linearDistance, vec3 playerPos, bool sky){
 
   return borderFogDensity;
 }
+
+vec2 allocatePrecision_TangentNormal(vec2 normals){
+	
+  vec2 newNormal = normals;
+
+  if(normals.x < 0.0) {
+		newNormal.x = -(1.0-pow(1-pow(clamp(-newNormal.x,0.0,1.0),2),0.5));
+	}else{
+		newNormal.x =  (1.0-pow(1-pow(clamp( newNormal.x,0.0,1.0),2),0.5));
+  }
+  if(normals.y < 0.0) {
+		newNormal.y = -(1.0-pow(1-pow(clamp(-newNormal.y,0.0,1.0),2),0.5));
+	}else{
+		newNormal.y =  (1.0-pow(1-pow(clamp( newNormal.y,0.0,1.0),2),0.5));
+  }
+
+	return newNormal;
+}
+
+
 void main() {
   /* RENDERTARGETS:7,3,10 */
 
@@ -492,7 +512,11 @@ void main() {
 	vec4 unpack1 = vec4(decodeVec2(data.b),decodeVec2(data.a)) ;
 	
 	vec4 albedo = vec4(unpack0.ba,unpack1.rg);
-	vec2 tangentNormals = unpack0.xy*2.0-1.0;
+
+	vec2 tangentNormals = unpack0.xy* 2.0 - 1.0;
+	// this was written with a curve applied to the normal to put denser bits where finer detail is needed. this is the inverse.
+  tangentNormals = allocatePrecision_TangentNormal(tangentNormals);
+
   
 	bool nameTagMask = abs(unpack1.a - 0.1) < 0.01;
   float nametagbackground = nameTagMask ? 0.25 : 1.0;
