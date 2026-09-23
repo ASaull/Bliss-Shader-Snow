@@ -271,7 +271,7 @@ void main() {
 
    	vec3 worldpos = mat3(gbufferModelViewInverse) * position + gbufferModelViewInverse[3].xyz;
 
-	// emission
+	// emission for text displays
 	if (lmtexcoord.z >= (14.5/15.0)) {
 		EMISSIVE = 0.6;
 	}

@@ -690,7 +690,7 @@ void applyPuddles(
 	float halfWet = min(wetnessAmount,1.0);
 	float fullWet = clamp(wetnessAmount - 2.0,0.0,1.0);
 	// halfWet = 1.0;
- 	// fullWet = 0.0;
+ 	// fullWet = 1.0;
 
 	vec2 driprate = vec2(0.0,frameTimeCounter)*0.05;
 

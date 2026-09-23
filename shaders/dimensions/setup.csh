@@ -867,7 +867,7 @@ void main() {
                 mixWeight = 1.0;
                 break;
             case BLOCK_GLASS_BLACK:
-                tintColor = vec3(0.3);
+                tintColor = vec3(0.7);
                 mixWeight = 1.0;
                 break;
             case BLOCK_GLASS_BLUE:
@@ -883,7 +883,7 @@ void main() {
                 mixWeight = 1.0;
                 break;
             case BLOCK_GLASS_GRAY:
-                tintColor = vec3(0.4, 0.4, 0.4);
+                tintColor = vec3(0.8);
                 mixWeight = 1.0;
                 break;
             case BLOCK_GLASS_GREEN:
@@ -895,7 +895,7 @@ void main() {
                 mixWeight = 1.0;
                 break;
             case BLOCK_GLASS_LIGHT_GRAY:
-                tintColor = vec3(0.7);
+                tintColor = vec3(0.9);
                 mixWeight = 1.0;
                 break;
             case BLOCK_GLASS_LIME:
