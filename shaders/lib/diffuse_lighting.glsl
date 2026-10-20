@@ -35,7 +35,7 @@ vec3 doBlockLightLighting(
 
     float lightmapCurve = mix(lightmapLight, 2.5, lightmapBrightspot);
     // lightmapCurve = lightmap;
-    vec3 blockLight = lightmapCurve * lightColor;
+    vec3 blockLight = lightmapCurve * lightColor / 15.0;
     
     #if defined IS_LPV_ENABLED && defined MC_GL_ARB_shader_image_load_store
         vec4 lpvSample = SampleLpvLinear(lpvPos);
@@ -54,7 +54,7 @@ vec3 doBlockLightLighting(
         #ifdef TORCH_LIGHTMAP_EMISSION_WORKAROUND
             blockLight = mix(blockLight, max(lpvSample.rgb, lightColor * 0.5 * min(max(lightmap-0.999,0.0)/(1.0-0.999),1.0)), voxelRangeFalloff);
         #else
-            blockLight = mix(blockLight, lpvSample.rgb, voxelRangeFalloff);
+            blockLight = mix(blockLight, lpvSample.rgb/2.0 * lightColor, voxelRangeFalloff);
         #endif
     #endif
 

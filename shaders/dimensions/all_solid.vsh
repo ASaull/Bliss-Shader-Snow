@@ -271,6 +271,11 @@ void main() {
 
    	vec3 worldpos = mat3(gbufferModelViewInverse) * position + gbufferModelViewInverse[3].xyz;
 
+	// emission for text displays
+	if (lmtexcoord.z >= (14.5/15.0)) {
+		EMISSIVE = 0.6;
+	}
+
 	#if FOLIAGE_ANIMATION_AMOUNT > 0
 		// also use normal, so up/down facing geometry does not get detatched from its model parts.
 		bool InterpolateFromBase = gl_MultiTexCoord0.t < max(mc_midTexCoord.t, abs(viewToWorld(FlatNormals).y));
